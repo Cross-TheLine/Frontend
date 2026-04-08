@@ -114,6 +114,14 @@ class AppTextStyles {
     );
   }
 
+  static TextStyle whiteM(BuildContext context) {
+    return TextStyle(
+      fontSize: AppSizes.sp(context, 20),
+      fontWeight: FontWeight.w700,
+      color: AppColors.white,
+    );
+  }
+
 
   //black 중간
   static TextStyle blackM(BuildContext context) {

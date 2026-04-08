@@ -54,7 +54,6 @@ class _StartScreenState extends State<StartScreen> {
             builder: (context, constraints) {
               final double screenWidth = constraints.maxWidth;
               final double screenHeight = constraints.maxHeight;
-
               final double horizontalPadding = AppSizes.w(context, 28);
               final double ballSize =
                   (screenWidth * 0.62).clamp(220.0, 320.0).toDouble();
@@ -69,7 +68,7 @@ class _StartScreenState extends State<StartScreen> {
                   Positioned(
                     left: horizontalPadding,
                     right: horizontalPadding,
-                    top: screenHeight * 0.11,
+                    top: screenHeight * 0.12,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -134,8 +133,6 @@ class _StartWatermarkBackground extends StatelessWidget {
       (_) => 'DO NOT CROSS THE LINE', //배경 텍스트
     );
     return IgnorePointer(// 배경 텍스트 (Do Not Cross The Line) 터치 이벤트 무시
-
-
       child: Padding(
         padding: EdgeInsets.only(top: AppSizes.h(context, 235)),
         child: Column(
@@ -176,14 +173,15 @@ class _TennisBallStartButton extends StatelessWidget {
     required this.onTap,
   });
 
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: size,
-        height: size,
+        width: size*0.9,
+        height: size*0.9,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -230,7 +228,7 @@ class _UsageGuideButton extends StatelessWidget {
 
       icon: Icon(
         Icons.search_rounded,
-        color: AppColors.mainWhite,
+        color: AppColors.white,
         size: AppSizes.sp(context, 20),
       ),
       label: Text(
