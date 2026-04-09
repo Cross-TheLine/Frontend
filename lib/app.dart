@@ -9,12 +9,14 @@ import 'screens/mainScreen/start_screen.dart';
 import 'screens/vidScreen/video_guideline_screen.dart';
 import 'screens/vidScreen/video_pick_screen.dart';
 import 'screens/vidScreen/video_take_screen.dart';
+import 'services/screen_orientation.dart';
 
 class CrossTheLine extends StatelessWidget {
   const CrossTheLine({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      
       debugShowCheckedModeBanner: false,
       title: 'Cross The Line',
       theme: ThemeData(
@@ -25,6 +27,7 @@ class CrossTheLine extends StatelessWidget {
           brightness: Brightness.dark,
         ),
       ),
+      navigatorObservers: [appRouteObserver], // 화면 이동 감지 옵저버
       initialRoute: AppRoutes.start,
       onGenerateRoute: _onGenerateRoute,
     );

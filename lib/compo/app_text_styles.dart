@@ -105,11 +105,20 @@ class AppTextStyles {
     );
   }
 
-//제일 작은 white
+//제일 작은 white (bold)
   static TextStyle whiteS(BuildContext context) {
     return TextStyle(
       fontSize: AppSizes.sp(context, 14),
       fontWeight: FontWeight.w700,
+      color: AppColors.white,
+    );
+  }
+
+  //제일 작은 white + not bold
+  static TextStyle whiteSs(BuildContext context) {
+    return TextStyle(
+      fontSize: AppSizes.sp(context, 14),
+      fontWeight: FontWeight.normal,
       color: AppColors.white,
     );
   }

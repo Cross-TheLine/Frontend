@@ -1,13 +1,76 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import '../../compo/app_button.dart';
+import 'package:lottie/lottie.dart';
+import 'package:native_device_orientation/native_device_orientation.dart';
+
 import '../../compo/app_colors.dart';
 import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
 import '../../routes.dart';
-import 'package:lottie/lottie.dart';
+import '../../services/screen_orientation.dart';
 
-class VideoGuidelineScreen extends StatelessWidget {
+class VideoGuidelineScreen extends StatefulWidget {
   const VideoGuidelineScreen({super.key});
+
+  @override
+  State<VideoGuidelineScreen> createState() => _VideoGuidelineScreenState();
+}
+
+class _VideoGuidelineScreenState extends State<VideoGuidelineScreen>
+    with ScreenOrientationMixin<VideoGuidelineScreen> {
+  @override
+  AppScreenOrientation get screenOrientation =>
+      AppScreenOrientation.guide;
+
+  bool _didNavigate = false;
+  bool _isLandscapeDetected = false;
+
+  StreamSubscription<NativeDeviceOrientation>? _orientationSub;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _orientationSub =
+        NativeDeviceOrientationCommunicator()
+            .onOrientationChanged(useSensor: true)
+            .listen((orientation) {
+      final bool isLandscape =
+          orientation == NativeDeviceOrientation.landscapeLeft ||
+          orientation == NativeDeviceOrientation.landscapeRight;
+
+      if (!mounted || _didNavigate) return;
+
+      if (isLandscape) {
+        setState(() {
+          _isLandscapeDetected = true;
+        });
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _goNext();
+        });
+      } else {
+        if (_isLandscapeDetected) {
+          setState(() {
+            _isLandscapeDetected = false;
+          });
+        }
+      }
+    });
+  }
+
+  void _goNext() {
+    if (_didNavigate || !mounted) return;
+    _didNavigate = true;
+    Navigator.pushReplacementNamed(context, AppRoutes.videoTake);
+  }
+
+  @override
+  void dispose() {
+    _orientationSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,13 +89,22 @@ class VideoGuidelineScreen extends StatelessWidget {
             children: [
               const Spacer(),
               Text(
-                '녹화를 위해 휴대폰을\n가로로 돌려주세요',
+                _isLandscapeDetected
+                    ? '촬영으로 넘어갑니다'
+                    : '녹화를 위해 휴대폰을\n가로로 돌려주세요',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.whiteM(context),
               ),
+              SizedBox(height: AppSizes.h(context, 16)),
+              Text(
+                _isLandscapeDetected
+                    ? '촬영 화면으로 이동 중입니다.'
+                    : '기기를 실제로 가로로 회전하면 자동으로 다음 화면으로 넘어갑니다 :)',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.whiteSs(context),
+              ),
               SizedBox(height: AppSizes.h(context, 50)),
-
-              Center( // 회전 애니메이션
+              Center(
                 child: SizedBox(
                   width: AppSizes.w(context, 320),
                   child: Lottie.asset(
@@ -43,14 +115,6 @@ class VideoGuidelineScreen extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-
-              // 테스트용 넘어가기 버튼
-              WhiteTextAppButton(
-                text: '넘어가기(테스트용)',
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.videoTake);
-                },
-              ),
             ],
           ),
         ),

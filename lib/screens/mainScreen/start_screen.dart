@@ -5,19 +5,74 @@ import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
 import '../../routes.dart';
 import '../../services/local_storage_service.dart';
+import '../../services/screen_orientation.dart';
 
 class StartScreen extends StatefulWidget {
-
   const StartScreen({super.key});
 
   @override
   State<StartScreen> createState() => _StartScreenState();
 }
 
-// 시작 화면  (아래 위젯들 포함)
-class _StartScreenState extends State<StartScreen> { 
+class _StartScreenState extends State<StartScreen> with RouteAware {
+  bool _subscribed = false;
+
   final LocalStorageService _localStorageService = LocalStorageService();
-  bool _isChecking = false; 
+  bool _isChecking = false;
+
+  Future<void> _forcePortrait() async {
+    await SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+    ]);
+  }
+
+  void _forcePortraitAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _forcePortrait();
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _forcePortrait();
+    _forcePortraitAfterFrame();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_subscribed) {
+      final route = ModalRoute.of(context);
+      if (route != null) {
+        appRouteObserver.subscribe(this, route);
+        _subscribed = true;
+      }
+    }
+
+    _forcePortrait();
+    _forcePortraitAfterFrame();
+  }
+
+  @override
+  void didPush() {
+    _forcePortrait();
+    _forcePortraitAfterFrame();
+  }
+
+  @override
+  void didPopNext() {
+    _forcePortrait();
+    _forcePortraitAfterFrame();
+  }
+
+  @override
+  void didPushNext() {}
+
+  @override
+  void didPop() {}
 
   Future<void> _onStartMatch() async {
     if (_isChecking) return;
@@ -26,21 +81,29 @@ class _StartScreenState extends State<StartScreen> {
       _isChecking = true;
     });
 
-    final bool isFirstLaunch = await _localStorageService.isFirstLaunch(); // 첫 실행 여부 확인
+    final bool isFirstLaunch = await _localStorageService.isFirstLaunch();
     if (!mounted) return;
 
     setState(() {
       _isChecking = false;
     });
 
-    Navigator.pushNamed( // 첫 실행이면 IntroScreen, 아니면 VideoGuidelineScreen으로 이동
+    Navigator.pushNamed(
       context,
       isFirstLaunch ? AppRoutes.intro : AppRoutes.videoGuideline,
     );
   }
 
-  void _onShowIntro() { // 사용 방법 안내 화면으로 이동
+  void _onShowIntro() {
     Navigator.pushNamed(context, AppRoutes.intro);
+  }
+
+  @override
+  void dispose() {
+    if (_subscribed) {
+      appRouteObserver.unsubscribe(this);
+    }
+    super.dispose();
   }
 
   @override
@@ -61,14 +124,11 @@ class _StartScreenState extends State<StartScreen> {
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  const Positioned.fill(
-                    child: _StartWatermarkBackground(),
-                  ),
-
+                  const Positioned.fill(child: _StartWatermarkBackground()),
                   Positioned(
                     left: horizontalPadding,
                     right: horizontalPadding,
-                    top: screenHeight * 0.12,
+                    top: screenHeight * 0.11,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -89,7 +149,6 @@ class _StartScreenState extends State<StartScreen> {
                       ],
                     ),
                   ),
-
                   Positioned(
                     left: 0,
                     right: 0,
@@ -102,15 +161,12 @@ class _StartScreenState extends State<StartScreen> {
                       ),
                     ),
                   ),
-
                   Positioned(
                     left: 0,
                     right: 0,
                     bottom: AppSizes.h(context, 28),
                     child: Center(
-                      child: _UsageGuideButton(
-                        onPressed: _onShowIntro,
-                      ),
+                      child: _UsageGuideButton(onPressed: _onShowIntro),
                     ),
                   ),
                 ],
@@ -123,16 +179,17 @@ class _StartScreenState extends State<StartScreen> {
   }
 }
 
-// (Do Not Cross The Line) 배경 텍스트 위젯
 class _StartWatermarkBackground extends StatelessWidget {
   const _StartWatermarkBackground();
-  @override 
+
+  @override
   Widget build(BuildContext context) {
     final List<String> lines = List.generate(
       6,
-      (_) => 'DO NOT CROSS THE LINE', //배경 텍스트
+      (_) => 'DO NOT CROSS THE LINE',
     );
-    return IgnorePointer(// 배경 텍스트 (Do Not Cross The Line) 터치 이벤트 무시
+
+    return IgnorePointer(
       child: Padding(
         padding: EdgeInsets.only(top: AppSizes.h(context, 235)),
         child: Column(
@@ -161,7 +218,6 @@ class _StartWatermarkBackground extends StatelessWidget {
   }
 }
 
-// START 버튼 위젯 (테니스공 버튼)
 class _TennisBallStartButton extends StatelessWidget {
   final double size;
   final bool isLoading;
@@ -173,15 +229,14 @@ class _TennisBallStartButton extends StatelessWidget {
     required this.onTap,
   });
 
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: size*0.9,
-        height: size*0.9,
+        width: size * 0.9,
+        height: size * 0.9,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -213,19 +268,15 @@ class _TennisBallStartButton extends StatelessWidget {
   }
 }
 
-// 사용 방법 안내 버튼 위젯
 class _UsageGuideButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const _UsageGuideButton({
-    required this.onPressed,
-  });
+  const _UsageGuideButton({required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: onPressed,
-
       icon: Icon(
         Icons.search_rounded,
         color: AppColors.white,
@@ -237,18 +288,15 @@ class _UsageGuideButton extends StatelessWidget {
       ),
       style: OutlinedButton.styleFrom(
         backgroundColor: AppColors.helpButtonFill,
-        
         side: const BorderSide(
           color: AppColors.helpButtonBorder,
           width: 1,
         ),
-
         shape: const StadiumBorder(),
         padding: EdgeInsets.symmetric(
           horizontal: AppSizes.w(context, 10),
           vertical: AppSizes.h(context, 10),
         ),
-
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: VisualDensity.compact,
       ),

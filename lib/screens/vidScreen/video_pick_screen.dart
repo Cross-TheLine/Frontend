@@ -6,6 +6,7 @@ import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
 import '../../routes.dart';
 import '../../services/api_service.dart';
+import '../../services/screen_orientation.dart';
 
 class VideoPickScreen extends StatefulWidget {
   const VideoPickScreen({super.key});
@@ -14,7 +15,11 @@ class VideoPickScreen extends StatefulWidget {
   State<VideoPickScreen> createState() => _VideoPickScreenState();
 }
 
-class _VideoPickScreenState extends State<VideoPickScreen> {
+class _VideoPickScreenState extends State<VideoPickScreen>
+    with ScreenOrientationMixin<VideoPickScreen> {
+  @override
+  AppScreenOrientation get screenOrientation => AppScreenOrientation.landscape;
+
   final ApiService _apiService = ApiService();
 
   bool _isLoading = true;
@@ -71,9 +76,8 @@ class _VideoPickScreenState extends State<VideoPickScreen> {
                     ? const Center(child: CircularProgressIndicator())
                     : ListView.separated(
                         itemCount: _candidateVideos.length,
-                        separatorBuilder: (_, _) => SizedBox(
-                          height: AppSizes.h(context, 12),
-                        ),
+                        separatorBuilder: (_, _) =>
+                            SizedBox(height: AppSizes.h(context, 12)),
                         itemBuilder: (context, index) {
                           final bool isSelected = _selectedIndex == index;
 
@@ -116,13 +120,16 @@ class _VideoPickScreenState extends State<VideoPickScreen> {
                                   SizedBox(width: AppSizes.w(context, 16)),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           _candidateVideos[index],
                                           style: AppTextStyles.whiteS(context),
                                         ),
-                                        SizedBox(height: AppSizes.h(context, 8)),
+                                        SizedBox(
+                                          height: AppSizes.h(context, 8),
+                                        ),
                                         Text(
                                           '현재는 placeholder 카드입니다. 썸네일, 재생 길이, 하이라이트 정보를 여기에 붙이면 됩니다.',
                                           style: AppTextStyles.caption(context),

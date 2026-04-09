@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../compo/app_button.dart';
 import '../../compo/app_colors.dart';
 import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
 import '../../routes.dart';
+import '../../services/screen_orientation.dart';
 
 class ResultScreen extends StatefulWidget {
-  const ResultScreen({
-    super.key,
-    required this.isIn,
-  });
+  const ResultScreen({super.key, required this.isIn});
 
   final bool isIn;
 
@@ -18,7 +17,11 @@ class ResultScreen extends StatefulWidget {
   State<ResultScreen> createState() => _ResultScreenState();
 }
 
-class _ResultScreenState extends State<ResultScreen> {
+class _ResultScreenState extends State<ResultScreen>
+    with ScreenOrientationMixin<ResultScreen> {
+  @override
+  AppScreenOrientation get screenOrientation => AppScreenOrientation.landscape;
+
   bool _isMoving = false;
 
   @override
@@ -37,12 +40,16 @@ class _ResultScreenState extends State<ResultScreen> {
     _goToStart();
   }
 
-  void _goToStart() {
-    if (_isMoving) {
-      return;
-    }
-
+  void _goToStart() async {
+    if (_isMoving) return;
     _isMoving = true;
+
+    //먼저 세로로 강제 전환
+    await SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+    ]);
+
+    // 그 다음 이동
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.start,
@@ -52,8 +59,9 @@ class _ResultScreenState extends State<ResultScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor =
-        widget.isIn ? AppColors.inResult : AppColors.outResult;
+    final Color backgroundColor = widget.isIn
+        ? AppColors.inResult
+        : AppColors.outResult;
     final String resultText = widget.isIn ? 'IN !!!' : 'OUT !!!';
 
     return Scaffold(

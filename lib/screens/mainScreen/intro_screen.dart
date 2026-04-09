@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:frontend/compo/app_button.dart';
 import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
 import '../../routes.dart';
 import '../../services/local_storage_service.dart';
+import '../../services/screen_orientation.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});
@@ -12,7 +14,9 @@ class IntroScreen extends StatefulWidget {
   State<IntroScreen> createState() => _IntroScreenState();
 }
 
-class _IntroScreenState extends State<IntroScreen> {
+class _IntroScreenState extends State<IntroScreen> with RouteAware {
+  bool _subscribed = false;
+
   final PageController _pageController = PageController();
   final LocalStorageService _localStorageService = LocalStorageService();
 
@@ -29,9 +33,63 @@ class _IntroScreenState extends State<IntroScreen> {
     ),
     _IntroPageData(
       title: '카메라 해상도를\n30~60fps로 맞춰주세요',
-      imagePath: 'assets/images/intro3.png',
+      imagePath: 'assets/images/intro2.png',
     ),
   ];
+
+  Future<void> _forcePortrait() async {
+    await SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+    ]);
+  }
+
+  void _forcePortraitAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _forcePortrait();
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _forcePortrait();
+    _forcePortraitAfterFrame();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_subscribed) {
+      final route = ModalRoute.of(context);
+      if (route != null) {
+        appRouteObserver.subscribe(this, route);
+        _subscribed = true;
+      }
+    }
+
+    _forcePortrait();
+    _forcePortraitAfterFrame();
+  }
+
+  @override
+  void didPush() {
+    _forcePortrait();
+    _forcePortraitAfterFrame();
+  }
+
+  @override
+  void didPopNext() {
+    _forcePortrait();
+    _forcePortraitAfterFrame();
+  }
+
+  @override
+  void didPushNext() {}
+
+  @override
+  void didPop() {}
 
   Future<void> _goToVideoGuideline() async {
     await _localStorageService.completeOnboarding();
@@ -43,6 +101,9 @@ class _IntroScreenState extends State<IntroScreen> {
 
   @override
   void dispose() {
+    if (_subscribed) {
+      appRouteObserver.unsubscribe(this);
+    }
     _pageController.dispose();
     super.dispose();
   }
@@ -58,7 +119,6 @@ class _IntroScreenState extends State<IntroScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          // 좌우 패딩
           padding: EdgeInsets.symmetric(horizontal: AppSizes.w(context, 12)),
           child: Column(
             children: [
@@ -76,8 +136,6 @@ class _IntroScreenState extends State<IntroScreen> {
                     return Column(
                       children: [
                         SizedBox(height: AppSizes.h(context, 70)),
-
-                        //텍스트
                         Padding(
                           padding: EdgeInsets.symmetric(
                             horizontal: AppSizes.w(context, 8),
@@ -89,8 +147,6 @@ class _IntroScreenState extends State<IntroScreen> {
                           ),
                         ),
                         SizedBox(height: AppSizes.h(context, 24)),
-
-                        //이미지
                         Expanded(
                           child: Center(
                             child: Image.asset(
@@ -106,8 +162,6 @@ class _IntroScreenState extends State<IntroScreen> {
                   },
                 ),
               ),
-
-              // 페이지 인디케이터
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
@@ -130,10 +184,7 @@ class _IntroScreenState extends State<IntroScreen> {
                   ),
                 ),
               ),
-
               SizedBox(height: AppSizes.h(context, 18)),
-
-              // 촬영으로 가는 버튼(마지막 페이지에만)
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: _currentIndex == _introItems.length - 1

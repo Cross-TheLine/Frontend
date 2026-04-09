@@ -40,10 +40,10 @@ class WhiteTextAppButton extends StatelessWidget {
         : AppColors.textPrimary;
 
     final BorderSide side = BorderSide(
-      color: isSecondary ? AppColors.border : Colors.transparent,
+      color: isSecondary ? AppColors.border : const Color.fromARGB(0, 208, 208, 208),
     );
 
-    // padding
+    
     final EdgeInsetsGeometry padding = isPillDark
         ? EdgeInsets.symmetric(
             horizontal: AppSizes.w(context, 35),
@@ -77,7 +77,7 @@ class WhiteTextAppButton extends StatelessWidget {
         disabledBackgroundColor: AppColors.border,
         disabledForegroundColor: isPillDark
             ? Colors.white70
-            : AppColors.textPrimary.withOpacity(0.6),
+            : AppColors.textPrimary,
         padding: padding,
         tapTargetSize: isPillDark
             ? MaterialTapTargetSize.shrinkWrap
