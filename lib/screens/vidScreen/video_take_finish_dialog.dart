@@ -5,8 +5,8 @@ import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
 
 enum VideoTakeFinishAction {
-  judge,
-  skip,
+  judge, //판별
+  skip, //건너뛰기
 }
 
 class VideoTakeFinish extends StatelessWidget {
@@ -17,24 +17,24 @@ class VideoTakeFinish extends StatelessWidget {
     return AlertDialog(
       title: Text(
         'IN / OUT을 판별할까요?',
-        style: AppTextStyles.whiteS(context),
+        style: AppTextStyles.whiteM(context),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '촬영한 영상을 판별할지, 아니면 건너뛸지 선택하는 단계입니다.',
+            '방금 촬영한 영상이 IN인지 OUT인지 판별할까요?',
             style: AppTextStyles.body(context),
           ),
-          SizedBox(height: AppSizes.h(context, 20)),
+          SizedBox(height: AppSizes.h(context, 10)),
           WhiteTextAppButton(
             text: '판별',
             onPressed: () {
               Navigator.of(context).pop(VideoTakeFinishAction.judge);
             },
           ),
-          SizedBox(height: AppSizes.h(context, 12)),
+          SizedBox(height: AppSizes.h(context, 8)),
           WhiteTextAppButton(
             text: '건너뛰기',
             variant: AppButtonVariant.secondary,

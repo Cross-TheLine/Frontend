@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/vidScreen/video_take_finish.dart';
+import 'package:frontend/screens/vidScreen/video_take_finish_dialog.dart';
 
 import '../../compo/app_button.dart';
 import '../../compo/app_colors.dart';
@@ -7,6 +7,8 @@ import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
 import '../../routes.dart';
 import '../../services/camera_service.dart';
+import 'package:flutter/services.dart';
+import '../../services/screen_orientation.dart';
 
 class VideoTakeScreen extends StatefulWidget {
   const VideoTakeScreen({super.key});
@@ -15,7 +17,11 @@ class VideoTakeScreen extends StatefulWidget {
   State<VideoTakeScreen> createState() => _VideoTakeScreenState();
 }
 
-class _VideoTakeScreenState extends State<VideoTakeScreen> {
+class _VideoTakeScreenState extends State<VideoTakeScreen>
+    with ScreenOrientationMixin<VideoTakeScreen> {
+  @override
+  AppScreenOrientation get screenOrientation => AppScreenOrientation.landscape;
+
   final CameraService _cameraService = CameraService();
 
   bool _isInitialized = false;
@@ -130,7 +136,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen> {
                           ),
                           SizedBox(height: AppSizes.h(context, 12)),
                           Text(
-                            '실제 카메라 미리보기와 녹화 기능은 이 영역에 연결하면 됩니다.',
+                            '촬영 여기에 띄우기',
                             textAlign: TextAlign.center,
                             style: AppTextStyles.body(context),
                           ),

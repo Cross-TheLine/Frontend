@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
 import '../../routes.dart';
+import '../../services/screen_orientation.dart';
 
 class ResultSkipScreen extends StatefulWidget {
   const ResultSkipScreen({super.key});
@@ -11,7 +13,11 @@ class ResultSkipScreen extends StatefulWidget {
   State<ResultSkipScreen> createState() => _ResultSkipScreenState();
 }
 
-class _ResultSkipScreenState extends State<ResultSkipScreen> {
+class _ResultSkipScreenState extends State<ResultSkipScreen>
+    with ScreenOrientationMixin<ResultSkipScreen> {
+  @override
+  AppScreenOrientation get screenOrientation => AppScreenOrientation.landscape;
+
   bool _isMoving = false;
 
   @override
@@ -30,12 +36,16 @@ class _ResultSkipScreenState extends State<ResultSkipScreen> {
     _goToStart();
   }
 
-  void _goToStart() {
-    if (_isMoving) {
-      return;
-    }
-
+  void _goToStart() async {
+    if (_isMoving) return;
     _isMoving = true;
+
+    // 먼저 세로로 강제 전환
+    await SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+    ]);
+
+    // 그 다음 이동
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.start,
@@ -53,10 +63,7 @@ class _ResultSkipScreenState extends State<ResultSkipScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  'NO FIGHT !!',
-                  style: AppTextStyles.title(context),
-                ),
+                Text('NO FIGHT !!', style: AppTextStyles.title(context)),
                 SizedBox(height: AppSizes.h(context, 12)),
                 Text(
                   '판별을 건너뛰었습니다. 잠시 후 시작 화면으로 돌아갑니다.',

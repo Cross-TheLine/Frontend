@@ -32,7 +32,7 @@ class WhiteTextAppButton extends StatelessWidget {
     final Color backgroundColor = isPillDark
         ? const Color(0xFF1F1F1F)
         : isPrimary
-            ? AppColors.primary
+            ? AppColors.black
             : AppColors.surface;
 
     final Color foregroundColor = isPillDark
@@ -40,9 +40,10 @@ class WhiteTextAppButton extends StatelessWidget {
         : AppColors.textPrimary;
 
     final BorderSide side = BorderSide(
-      color: isSecondary ? AppColors.border : Colors.transparent,
+      color: isSecondary ? AppColors.border : const Color.fromARGB(0, 208, 208, 208),
     );
 
+    
     final EdgeInsetsGeometry padding = isPillDark
         ? EdgeInsets.symmetric(
             horizontal: AppSizes.w(context, 35),
@@ -52,8 +53,9 @@ class WhiteTextAppButton extends StatelessWidget {
             horizontal: AppSizes.w(context, 16),
             vertical: AppSizes.h(context, 14),
           );
+    
 
-    final double borderRadius = isPillDark
+    final double borderRadius = isPillDark 
         ? AppSizes.w(context, 30)
         : AppSizes.w(context, 16);
 
@@ -64,6 +66,8 @@ class WhiteTextAppButton extends StatelessWidget {
           )
         : AppTextStyles.button(context);
 
+
+
     final button = ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
@@ -73,7 +77,7 @@ class WhiteTextAppButton extends StatelessWidget {
         disabledBackgroundColor: AppColors.border,
         disabledForegroundColor: isPillDark
             ? Colors.white70
-            : AppColors.textPrimary.withOpacity(0.6),
+            : AppColors.textPrimary,
         padding: padding,
         tapTargetSize: isPillDark
             ? MaterialTapTargetSize.shrinkWrap

@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  lottie: ^3.3.2 
+  native_device_orientation: ^2.1.0 # 화면 방향 감지 패키지
   shared_preferences: ^2.5.5
 
 dev_dependencies:
@@ -23,4 +25,5 @@ flutter:
     - assets/images/tennis_ball.png
     - assets/images/intro1.png
     - assets/images/intro2.png
+    - assets/lottie/rotate_guide.json
 
