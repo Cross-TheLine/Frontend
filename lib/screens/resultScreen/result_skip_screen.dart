@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
 import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
 import '../../routes.dart';
@@ -32,7 +30,6 @@ class _ResultSkipScreenState extends State<ResultSkipScreen>
     if (!mounted) {
       return;
     }
-
     _goToStart();
   }
 
@@ -40,12 +37,13 @@ class _ResultSkipScreenState extends State<ResultSkipScreen>
     if (_isMoving) return;
     _isMoving = true;
 
-    // 먼저 세로로 강제 전환
-    await SystemChrome.setPreferredOrientations(const [
-      DeviceOrientation.portraitUp,
-    ]);
+    await applyAppScreenOrientation(AppScreenOrientation.portrait);
+    await waitForAppliedOrientation(context, AppScreenOrientation.portrait);
 
-    // 그 다음 이동
+    if (!mounted) {
+      return;
+    }
+
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.start,

@@ -14,65 +14,13 @@ class StartScreen extends StatefulWidget {
   State<StartScreen> createState() => _StartScreenState();
 }
 
-class _StartScreenState extends State<StartScreen> with RouteAware {
-  bool _subscribed = false;
+class _StartScreenState extends State<StartScreen>
+    with ScreenOrientationMixin<StartScreen> {
+  @override
+  AppScreenOrientation get screenOrientation => AppScreenOrientation.portrait; // 시작 화면 : 세로 모드로 고정
 
   final LocalStorageService _localStorageService = LocalStorageService();
   bool _isChecking = false;
-
-  Future<void> _forcePortrait() async {
-    await SystemChrome.setPreferredOrientations(const [
-      DeviceOrientation.portraitUp,
-    ]);
-  }
-
-  void _forcePortraitAfterFrame() {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await _forcePortrait();
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _forcePortrait();
-    _forcePortraitAfterFrame();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    if (!_subscribed) {
-      final route = ModalRoute.of(context);
-      if (route != null) {
-        appRouteObserver.subscribe(this, route);
-        _subscribed = true;
-      }
-    }
-
-    _forcePortrait();
-    _forcePortraitAfterFrame();
-  }
-
-  @override
-  void didPush() {
-    _forcePortrait();
-    _forcePortraitAfterFrame();
-  }
-
-  @override
-  void didPopNext() {
-    _forcePortrait();
-    _forcePortraitAfterFrame();
-  }
-
-  @override
-  void didPushNext() {}
-
-  @override
-  void didPop() {}
 
   Future<void> _onStartMatch() async {
     if (_isChecking) return;
@@ -96,14 +44,6 @@ class _StartScreenState extends State<StartScreen> with RouteAware {
 
   void _onShowIntro() {
     Navigator.pushNamed(context, AppRoutes.intro);
-  }
-
-  @override
-  void dispose() {
-    if (_subscribed) {
-      appRouteObserver.unsubscribe(this);
-    }
-    super.dispose();
   }
 
   @override

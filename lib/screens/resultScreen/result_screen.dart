@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
 import '../../compo/app_button.dart';
 import '../../compo/app_colors.dart';
 import '../../compo/app_sizes.dart';
@@ -44,12 +42,13 @@ class _ResultScreenState extends State<ResultScreen>
     if (_isMoving) return;
     _isMoving = true;
 
-    //먼저 세로로 강제 전환
-    await SystemChrome.setPreferredOrientations(const [
-      DeviceOrientation.portraitUp,
-    ]);
+    await applyAppScreenOrientation(AppScreenOrientation.portrait);
+    await waitForAppliedOrientation(context, AppScreenOrientation.portrait);
 
-    // 그 다음 이동
+    if (!mounted) {
+      return;
+    }
+
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.start,

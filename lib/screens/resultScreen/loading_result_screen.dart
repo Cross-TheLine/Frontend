@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
@@ -16,15 +17,20 @@ class LoadingResultScreen extends StatefulWidget {
 }
 
 class _LoadingResultScreenState extends State<LoadingResultScreen>
-    with ScreenOrientationMixin<LoadingResultScreen> {
+    with ScreenOrientationMixin<LoadingResultScreen>, TickerProviderStateMixin {
   @override
   AppScreenOrientation get screenOrientation => AppScreenOrientation.landscape;
 
   final ApiService _apiService = ApiService();
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    );
     _requestJudgeResult();
   }
 
@@ -45,6 +51,12 @@ class _LoadingResultScreenState extends State<LoadingResultScreen>
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
@@ -53,13 +65,28 @@ class _LoadingResultScreenState extends State<LoadingResultScreen>
             padding: AppSizes.pagePadding(context),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+
               children: [
-                const CircularProgressIndicator(),
-                SizedBox(height: AppSizes.h(context, 24)),
+                Center(
+                  child: SizedBox(
+                    height: AppSizes.w(context, 100),
+                    child: Lottie.asset(
+                      'assets/lottie/tennis_ball.json',
+                      fit: BoxFit.contain,
+                      repeat: true,
+                      controller: _controller,
+                      onLoaded: (composition) {
+                        _controller.duration = composition.duration * 1.6;
+                        _controller.forward();
+                      },
+                    ),
+                  ),
+                ),
+                SizedBox(height: AppSizes.h(context, 20)),
                 Text('판별 중입니다...', style: AppTextStyles.whiteS(context)),
                 SizedBox(height: AppSizes.h(context, 12)),
                 Text(
-                  '서버 분석이 끝나면 결과 화면으로 이동합니다.',
+                  '테니스 관련 꿀팁',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.body(context),
                 ),

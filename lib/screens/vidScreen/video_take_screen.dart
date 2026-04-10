@@ -7,7 +7,6 @@ import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
 import '../../routes.dart';
 import '../../services/camera_service.dart';
-import 'package:flutter/services.dart';
 import '../../services/screen_orientation.dart';
 
 class VideoTakeScreen extends StatefulWidget {
@@ -37,9 +36,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
   Future<void> _initializeCamera() async {
     await _cameraService.initialize();
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() {
       _isInitialized = true;
@@ -50,9 +47,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
     if (!_isRecording) {
       await _cameraService.startRecording();
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
         _isRecording = true;
@@ -62,9 +57,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
 
     final recordedPath = await _cameraService.stopRecording();
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     setState(() {
       _isRecording = false;
@@ -76,9 +69,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
       builder: (_) => const VideoTakeFinish(),
     );
 
-    if (!mounted || action == null) {
-      return;
-    }
+    if (!mounted || action == null) return;
 
     if (action == VideoTakeFinishAction.judge) {
       Navigator.pushReplacementNamed(context, AppRoutes.videoPick);
@@ -97,70 +88,94 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('동영상 촬영'),
-        backgroundColor: Colors.transparent,
-      ),
-      body: SafeArea(
+      backgroundColor: AppColors.background,
+
+      // 하단 버튼을 별도로 빼서 잘리지 않게
+      bottomNavigationBar: SafeArea(
+        top: false,
         child: Padding(
-          padding: AppSizes.pagePadding(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(
-                      AppSizes.w(context, 24),
-                    ),
-                  ),
-                  child: Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(AppSizes.w(context, 24)),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.videocam_outlined,
-                            size: AppSizes.w(context, 72),
-                            color: AppColors.textPrimary,
+          padding: EdgeInsets.fromLTRB(
+            AppSizes.w(context, 20),
+            AppSizes.h(context, 8),
+            AppSizes.w(context, 20),
+            AppSizes.h(context, 12),
+          ),
+          child: WhiteTextAppButton(
+            text: _isRecording ? '촬영 종료' : '촬영 시작',
+            isExpanded: false,
+            onPressed: _isInitialized ? _onRecordButtonPressed : null,
+          ),
+        ),
+      ),
+
+      body: SafeArea( // appBar 대신 SafeArea로 띄워서 버튼과 겹치지 않게
+        bottom: false,
+        child: Stack(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSizes.w(context, 20),
+                AppSizes.h(context, 8),
+                AppSizes.w(context, 20),
+                AppSizes.h(context, 8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // appBar 대신
+                  SizedBox(height: AppSizes.h(context, 36)),
+
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.w(context, 10),
+                        ),
+                      ),
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(AppSizes.w(context, 24)),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '촬영 여기에 띄우기',
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.body(context),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: AppSizes.h(context, 16)),
-                          Text(
-                            _isInitialized
-                                ? (_isRecording ? '촬영 중입니다.' : '카메라 준비 완료')
-                                : '카메라 초기화 중...',
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.whiteS(context),
-                          ),
-                          SizedBox(height: AppSizes.h(context, 12)),
-                          Text(
-                            '촬영 여기에 띄우기',
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.body(context),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
+
+                  if (_recordedVideoPath != null) ...[
+                    SizedBox(height: AppSizes.h(context, 10)),
+                    Text(
+                      '최근 녹화 파일: $_recordedVideoPath',
+                      style: AppTextStyles.caption(context),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
               ),
-              SizedBox(height: AppSizes.h(context, 16)),
-              if (_recordedVideoPath != null)
-                Padding(
-                  padding: EdgeInsets.only(bottom: AppSizes.h(context, 12)),
-                  child: Text(
-                    '최근 녹화 파일: $_recordedVideoPath',
-                    style: AppTextStyles.caption(context),
-                  ),
-                ),
-              WhiteTextAppButton(
-                text: _isRecording ? '촬영 종료' : '촬영 시작',
-                onPressed: _isInitialized ? _onRecordButtonPressed : null,
+            ),
+
+            
+            Positioned(
+              left: AppSizes.w(context, 8),
+              top: AppSizes.h(context, 2),
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back),
+                color: Colors.white,
+                tooltip: '뒤로가기',
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

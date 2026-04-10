@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:frontend/compo/app_button.dart';
 import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
@@ -14,8 +13,10 @@ class IntroScreen extends StatefulWidget {
   State<IntroScreen> createState() => _IntroScreenState();
 }
 
-class _IntroScreenState extends State<IntroScreen> with RouteAware {
-  bool _subscribed = false;
+class _IntroScreenState extends State<IntroScreen>
+    with ScreenOrientationMixin<IntroScreen> {
+  @override
+  AppScreenOrientation get screenOrientation => AppScreenOrientation.portrait;
 
   final PageController _pageController = PageController();
   final LocalStorageService _localStorageService = LocalStorageService();
@@ -37,60 +38,6 @@ class _IntroScreenState extends State<IntroScreen> with RouteAware {
     ),
   ];
 
-  Future<void> _forcePortrait() async {
-    await SystemChrome.setPreferredOrientations(const [
-      DeviceOrientation.portraitUp,
-    ]);
-  }
-
-  void _forcePortraitAfterFrame() {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await _forcePortrait();
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _forcePortrait();
-    _forcePortraitAfterFrame();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    if (!_subscribed) {
-      final route = ModalRoute.of(context);
-      if (route != null) {
-        appRouteObserver.subscribe(this, route);
-        _subscribed = true;
-      }
-    }
-
-    _forcePortrait();
-    _forcePortraitAfterFrame();
-  }
-
-  @override
-  void didPush() {
-    _forcePortrait();
-    _forcePortraitAfterFrame();
-  }
-
-  @override
-  void didPopNext() {
-    _forcePortrait();
-    _forcePortraitAfterFrame();
-  }
-
-  @override
-  void didPushNext() {}
-
-  @override
-  void didPop() {}
-
   Future<void> _goToVideoGuideline() async {
     await _localStorageService.completeOnboarding();
 
@@ -101,9 +48,6 @@ class _IntroScreenState extends State<IntroScreen> with RouteAware {
 
   @override
   void dispose() {
-    if (_subscribed) {
-      appRouteObserver.unsubscribe(this);
-    }
     _pageController.dispose();
     super.dispose();
   }
