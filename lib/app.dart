@@ -23,7 +23,7 @@ class CrossTheLine extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.background,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
+          seedColor: AppColors.primaryGreen,
           brightness: Brightness.dark,
         ),
       ),

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
-import '../../compo/app_button.dart';
+import 'package:frontend/compo/app_button.dart';
 import '../../compo/app_colors.dart';
 import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
@@ -10,7 +8,6 @@ import '../../services/screen_orientation.dart';
 
 class ResultScreen extends StatefulWidget {
   const ResultScreen({super.key, required this.isIn});
-
   final bool isIn;
 
   @override
@@ -19,10 +16,13 @@ class ResultScreen extends StatefulWidget {
 
 class _ResultScreenState extends State<ResultScreen>
     with ScreenOrientationMixin<ResultScreen> {
-  @override
-  AppScreenOrientation get screenOrientation => AppScreenOrientation.landscape;
-
   bool _isMoving = false;
+  bool _isReturningToStart = false;
+
+  @override
+  AppScreenOrientation get screenOrientation => _isReturningToStart
+      ? AppScreenOrientation.portrait
+      : AppScreenOrientation.landscape;
 
   @override
   void initState() {
@@ -32,24 +32,29 @@ class _ResultScreenState extends State<ResultScreen>
 
   Future<void> _moveToStart() async {
     await Future<void>.delayed(const Duration(seconds: 3));
+    //3초 후에  _gotoStart 함수 실행
+
+    if (!mounted) {
+      return;
+    }
+    _goToStart();
+  }
+
+  Future<void> _goToStart() async {
+    if (_isMoving) return;
+
+    setState(() {
+      _isMoving = true;
+      _isReturningToStart = true;
+    });
+
+    await applyAppScreenOrientation(screenOrientation);
+    await waitForAppliedOrientation(context, screenOrientation);
 
     if (!mounted) {
       return;
     }
 
-    _goToStart();
-  }
-
-  void _goToStart() async {
-    if (_isMoving) return;
-    _isMoving = true;
-
-    //먼저 세로로 강제 전환
-    await SystemChrome.setPreferredOrientations(const [
-      DeviceOrientation.portraitUp,
-    ]);
-
-    // 그 다음 이동
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.start,
@@ -67,27 +72,22 @@ class _ResultScreenState extends State<ResultScreen>
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
-        child: Padding(
-          padding: AppSizes.pagePadding(context),
+        child: SizedBox(
+          width: double.infinity,
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Spacer(),
               Text(
                 resultText,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.title(context),
+                style: AppTextStyles.whiteL3(context),
               ),
-              SizedBox(height: AppSizes.h(context, 16)),
+              SizedBox(height: AppSizes.h(context, 50)),
               Text(
-                '3초 후 시작 화면으로 돌아갑니다.',
+                '3초 후 시작 화면으로 돌아갑니다 :)',
                 textAlign: TextAlign.center,
-                style: AppTextStyles.body(context),
-              ),
-              const Spacer(),
-              WhiteTextAppButton(
-                text: '처음으로',
-                variant: AppButtonVariant.secondary,
-                onPressed: _goToStart,
+                style: AppTextStyles.whiteSs(context),
               ),
             ],
           ),

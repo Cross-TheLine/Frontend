@@ -53,24 +53,26 @@ class _VideoPickScreenState extends State<VideoPickScreen>
     );
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('판별 영상 선택'),
+        title: const Text('판별할 영상을 선택해주세요 :)'),
+        titleTextStyle: TextStyle(
+          color: AppColors.mainWhite,
+          fontSize: AppSizes.w(context, 7),
+          fontWeight: FontWeight.w500,
+        ),
         backgroundColor: Colors.transparent,
       ),
       body: SafeArea(
         child: Padding(
           padding: AppSizes.pagePadding(context),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                '서버에서 받은 후보 영상 중 하나를 선택하세요.',
-                style: AppTextStyles.body(context),
-              ),
-              SizedBox(height: AppSizes.h(context, 16)),
               Expanded(
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -99,7 +101,7 @@ class _VideoPickScreenState extends State<VideoPickScreen>
                                 ),
                                 border: Border.all(
                                   color: isSelected
-                                      ? AppColors.primary
+                                      ? AppColors.mainGreen
                                       : AppColors.border,
                                   width: isSelected ? 2 : 1,
                                 ),
@@ -131,7 +133,7 @@ class _VideoPickScreenState extends State<VideoPickScreen>
                                           height: AppSizes.h(context, 8),
                                         ),
                                         Text(
-                                          '현재는 placeholder 카드입니다. 썸네일, 재생 길이, 하이라이트 정보를 여기에 붙이면 됩니다.',
+                                          '썸네일, 재생 길이, 하이라이트 정보 여기에 붙이기',
                                           style: AppTextStyles.caption(context),
                                         ),
                                       ],
@@ -144,7 +146,6 @@ class _VideoPickScreenState extends State<VideoPickScreen>
                                       if (value == null) {
                                         return;
                                       }
-
                                       setState(() {
                                         _selectedIndex = value;
                                       });
@@ -157,10 +158,11 @@ class _VideoPickScreenState extends State<VideoPickScreen>
                         },
                       ),
               ),
-              SizedBox(height: AppSizes.h(context, 16)),
-              WhiteTextAppButton(
+              SizedBox(height: AppSizes.h(context, 10)),
+              TextAppButton(
                 text: '판별 시작하기',
                 onPressed: _isLoading ? null : _onStartJudge,
+                variant: AppButtonVariant.gray,
               ),
             ],
           ),

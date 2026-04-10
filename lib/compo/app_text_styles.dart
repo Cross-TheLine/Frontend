@@ -51,6 +51,17 @@ class AppTextStyles {
     );
   }
 
+  static TextStyle buttonB(
+    BuildContext context, {
+    Color color = AppColors.mainGray,
+  }) {
+    return TextStyle(
+      fontSize: AppSizes.sp(context, 16),
+      fontWeight: FontWeight.w600,
+      color: color,
+    );
+  }
+
   static TextStyle caption(
     BuildContext context, {
     Color color = AppColors.textSecondary,
@@ -62,17 +73,7 @@ class AppTextStyles {
     );
   }
 
-//white 큰거
-  static TextStyle whiteL2(BuildContext context) {
-    return TextStyle(
-      fontSize: AppSizes.sp(context, 34),
-      fontWeight: FontWeight.w800,
-      color: AppColors.white,
-      height: 1.05,
-    );
-  }
-
-//white small, italic
+  //white small, italic
   static TextStyle whiteSi(BuildContext context) {
     return TextStyle(
       fontSize: AppSizes.sp(context, 18),
@@ -82,7 +83,6 @@ class AppTextStyles {
       height: 1.1,
     );
   }
-
 
   static TextStyle watermark(BuildContext context) {
     return TextStyle(
@@ -95,7 +95,7 @@ class AppTextStyles {
     );
   }
 
-//white 큰거
+  //white 큰거
   static TextStyle whiteL(BuildContext context) {
     return TextStyle(
       fontSize: AppSizes.sp(context, 25),
@@ -105,7 +105,26 @@ class AppTextStyles {
     );
   }
 
-//제일 작은 white (bold)
+  //white 큰거
+  static TextStyle whiteL2(BuildContext context) {
+    return TextStyle(
+      fontSize: AppSizes.sp(context, 34),
+      fontWeight: FontWeight.w800,
+      color: AppColors.white,
+      height: 1.05,
+    );
+  }
+
+  static TextStyle whiteL3(BuildContext context) {
+    return TextStyle(
+      fontSize: AppSizes.sp(context, 80),
+      fontWeight: FontWeight.w800,
+      color: AppColors.white,
+      height: 1.1,
+    );
+  }
+
+  //제일 작은 white (bold)
   static TextStyle whiteS(BuildContext context) {
     return TextStyle(
       fontSize: AppSizes.sp(context, 14),
@@ -131,7 +150,6 @@ class AppTextStyles {
     );
   }
 
-
   //black 중간
   static TextStyle blackM(BuildContext context) {
     return TextStyle(
@@ -141,7 +159,36 @@ class AppTextStyles {
       height: 1.5,
     );
   }
+
+  //black 중간
+  static TextStyle blackMs(BuildContext context) {
+    return TextStyle(
+      fontSize: AppSizes.sp(context, 20),
+      fontWeight: FontWeight.w600,
+      color: AppColors.black,
+      height: 1.0,
+    );
+  }
+
+
+
+  //black 중간
+  static TextStyle greys(BuildContext context) {
+    return TextStyle(
+      fontSize: AppSizes.sp(context, 14),
+      fontWeight: FontWeight.w400,
+      color: AppColors.mainGray,
+      height: 1.0,
+    );
+  }
+
+    static TextStyle blackSi(BuildContext context) {
+    return TextStyle(
+      fontSize: AppSizes.sp(context, 18),
+      fontWeight: FontWeight.w400,
+      fontStyle: FontStyle.italic,
+      color: AppColors.pureWhite,
+      height: 1.1,
+    );
+  }
 }
-
-
-

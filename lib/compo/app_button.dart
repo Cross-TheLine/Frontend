@@ -3,19 +3,15 @@ import 'app_colors.dart';
 import 'app_sizes.dart';
 import 'app_text_styles.dart';
 
-enum AppButtonVariant {
-  primary,
-  secondary,
-  pillDark,
-}
+enum AppButtonVariant { green, white, gray, pillDark, lightgray }
 
-class WhiteTextAppButton extends StatelessWidget {
-  const WhiteTextAppButton({
+class TextAppButton extends StatelessWidget {
+  const TextAppButton({
     super.key,
     required this.text,
     required this.onPressed,
-    this.variant = AppButtonVariant.primary,
-    this.isExpanded = true,
+    this.variant = AppButtonVariant.green,
+    this.isExpanded = false,
   });
 
   final String text;
@@ -23,61 +19,112 @@ class WhiteTextAppButton extends StatelessWidget {
   final AppButtonVariant variant;
   final bool isExpanded;
 
+  static const double _defaultRadius = 30;
+
   @override
   Widget build(BuildContext context) {
-    final bool isPrimary = variant == AppButtonVariant.primary;
-    final bool isSecondary = variant == AppButtonVariant.secondary;
     final bool isPillDark = variant == AppButtonVariant.pillDark;
 
-    final Color backgroundColor = isPillDark
-        ? const Color(0xFF1F1F1F)
-        : isPrimary
-            ? AppColors.black
-            : AppColors.surface;
+    late final Color backgroundColor;
+    late final Color foregroundColor;
+    late final Color disabledBackgroundColor;
+    late final Color disabledForegroundColor;
+    late final BorderSide side;
+    late final EdgeInsetsGeometry padding;
+    late final double borderRadius;
+    late final TextStyle textStyle;
 
-    final Color foregroundColor = isPillDark
-        ? Colors.white
-        : AppColors.textPrimary;
+    switch (variant) {
+      case AppButtonVariant.green:
+        backgroundColor = AppColors.mainGreen;
+        foregroundColor = Colors.white;
+        disabledBackgroundColor = AppColors.mainGreen.withOpacity(0.45);
+        disabledForegroundColor = Colors.white70;
+        side = BorderSide.none;
+        padding = EdgeInsets.symmetric(
+          horizontal: AppSizes.w(context, 20),
+          vertical: AppSizes.h(context, 25),
+        );
+        borderRadius = _defaultRadius;
+        textStyle = AppTextStyles.button(
+          context,
+        ).copyWith(color: Colors.white, fontWeight: FontWeight.w600);
+        break;
 
-    final BorderSide side = BorderSide(
-      color: isSecondary ? AppColors.border : const Color.fromARGB(0, 208, 208, 208),
-    );
+      case AppButtonVariant.white:
+        backgroundColor = Colors.white;
+        foregroundColor = AppColors.textPrimary;
+        disabledBackgroundColor = Colors.white;
+        disabledForegroundColor = AppColors.textPrimary.withOpacity(0.4);
+        side = BorderSide(color: AppColors.border, width: 1);
+        padding = EdgeInsets.symmetric(
+          horizontal: AppSizes.w(context, 20),
+          vertical: AppSizes.h(context, 25),
+        );
+        borderRadius = _defaultRadius;
+        textStyle = AppTextStyles.button(
+          context,
+        ).copyWith(fontWeight: FontWeight.w600);
+        break;
 
-    
-    final EdgeInsetsGeometry padding = isPillDark
-        ? EdgeInsets.symmetric(
-            horizontal: AppSizes.w(context, 35),
-            vertical: AppSizes.h(context, 14),
-          )
-        : EdgeInsets.symmetric(
-            horizontal: AppSizes.w(context, 16),
-            vertical: AppSizes.h(context, 14),
-          );
-    
+      case AppButtonVariant.gray:
+        backgroundColor = AppColors.mainGray;
+        foregroundColor = AppColors.textPrimary;
+        disabledBackgroundColor = AppColors.border;
+        disabledForegroundColor = AppColors.textPrimary.withOpacity(0.4);
+        side = BorderSide.none;
+        padding = EdgeInsets.symmetric(
+          horizontal: AppSizes.w(context, 20),
+          vertical: AppSizes.h(context, 25),
+        );
+        borderRadius = _defaultRadius;
+        textStyle = AppTextStyles.button(
+          context,
+        ).copyWith(fontWeight: FontWeight.w600);
+        break;
 
-    final double borderRadius = isPillDark 
-        ? AppSizes.w(context, 30)
-        : AppSizes.w(context, 16);
+      case AppButtonVariant.pillDark:
+        backgroundColor = const Color(0xFF1F1F1F);
+        foregroundColor = Colors.white;
+        disabledBackgroundColor = AppColors.border;
+        disabledForegroundColor = Colors.white70;
+        side = BorderSide.none;
+        padding = EdgeInsets.symmetric(
+          horizontal: AppSizes.w(context, 35),
+          vertical: AppSizes.h(context, 14),
+        );
+        borderRadius = _defaultRadius;
+        textStyle = AppTextStyles.body(
+          context,
+        ).copyWith(color: Colors.white, fontWeight: FontWeight.w600);
+        break;
 
-    final TextStyle textStyle = isPillDark
-        ? AppTextStyles.body(context).copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          )
-        : AppTextStyles.button(context);
-
-
+      case AppButtonVariant.lightgray:
+        backgroundColor = AppColors.lightgray;
+        foregroundColor = AppColors.textPrimary;
+        disabledBackgroundColor = AppColors.border;
+        disabledForegroundColor = AppColors.textPrimary;
+        side = BorderSide.none;
+        padding = EdgeInsets.symmetric(
+          horizontal: AppSizes.w(context, 20),
+          vertical: AppSizes.h(context, 25),
+        );
+        borderRadius = _defaultRadius;
+        textStyle = AppTextStyles.buttonB(
+          context,
+        ).copyWith(fontWeight: FontWeight.w600);
+        break;
+    }
 
     final button = ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         elevation: 0,
+        shadowColor: Colors.transparent,
         backgroundColor: backgroundColor,
         foregroundColor: foregroundColor,
-        disabledBackgroundColor: AppColors.border,
-        disabledForegroundColor: isPillDark
-            ? Colors.white70
-            : AppColors.textPrimary,
+        disabledBackgroundColor: disabledBackgroundColor,
+        disabledForegroundColor: disabledForegroundColor,
         padding: padding,
         tapTargetSize: isPillDark
             ? MaterialTapTargetSize.shrinkWrap
@@ -88,15 +135,12 @@ class WhiteTextAppButton extends StatelessWidget {
           side: side,
         ),
       ),
-      child: Text(
-        text,
-        style: textStyle,
-      ),
+      child: Text(text, style: textStyle),
     );
 
     return SizedBox(
       width: isExpanded ? double.infinity : null,
-      height: isPillDark ? null : AppSizes.h(context, 56),
+      height: isPillDark ? null : (isExpanded ? AppSizes.h(context, 56) : null),
       child: button,
     );
   }
