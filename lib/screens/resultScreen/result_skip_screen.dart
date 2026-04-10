@@ -13,10 +13,14 @@ class ResultSkipScreen extends StatefulWidget {
 
 class _ResultSkipScreenState extends State<ResultSkipScreen>
     with ScreenOrientationMixin<ResultSkipScreen> {
-  @override
-  AppScreenOrientation get screenOrientation => AppScreenOrientation.landscape;
-
   bool _isMoving = false;
+  bool _isReturningToStart = false;
+
+  @override
+  AppScreenOrientation get screenOrientation =>
+      _isReturningToStart
+          ? AppScreenOrientation.portrait
+          : AppScreenOrientation.landscape;
 
   @override
   void initState() {
@@ -33,12 +37,16 @@ class _ResultSkipScreenState extends State<ResultSkipScreen>
     _goToStart();
   }
 
-  void _goToStart() async {
+  Future<void> _goToStart() async {
     if (_isMoving) return;
-    _isMoving = true;
 
-    await applyAppScreenOrientation(AppScreenOrientation.portrait);
-    await waitForAppliedOrientation(context, AppScreenOrientation.portrait);
+    setState(() {
+      _isMoving = true;
+      _isReturningToStart = true;
+    });
+
+    await applyAppScreenOrientation(screenOrientation);
+    await waitForAppliedOrientation(context, screenOrientation);
 
     if (!mounted) {
       return;

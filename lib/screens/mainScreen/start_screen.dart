@@ -17,7 +17,7 @@ class StartScreen extends StatefulWidget {
 class _StartScreenState extends State<StartScreen>
     with ScreenOrientationMixin<StartScreen> {
   @override
-  AppScreenOrientation get screenOrientation => AppScreenOrientation.portrait; // 시작 화면 : 세로 모드로 고정
+  AppScreenOrientation get screenOrientation => AppScreenOrientation.portrait;
 
   final LocalStorageService _localStorageService = LocalStorageService();
   bool _isChecking = false;
@@ -130,28 +130,33 @@ class _StartWatermarkBackground extends StatelessWidget {
     );
 
     return IgnorePointer(
-      child: Padding(
-        padding: EdgeInsets.only(top: AppSizes.h(context, 235)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: List.generate(lines.length, (index) {
-            final double leftOffset = index.isEven
-                ? -AppSizes.w(context, 86)
-                : -AppSizes.w(context, 18);
+      child: ClipRect(
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.only(top: AppSizes.h(context, 235)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: List.generate(lines.length, (index) {
+                final double leftOffset = index.isEven
+                    ? -AppSizes.w(context, 86)
+                    : -AppSizes.w(context, 18);
 
-            return Transform.translate(
-              offset: Offset(leftOffset, 0),
-              child: Padding(
-                padding: EdgeInsets.only(bottom: AppSizes.h(context, 18)),
-                child: Text(
-                  lines[index],
-                  softWrap: false,
-                  overflow: TextOverflow.visible,
-                  style: AppTextStyles.watermark(context),
-                ),
-              ),
-            );
-          }),
+                return Transform.translate(
+                  offset: Offset(leftOffset, 0),
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: AppSizes.h(context, 18)),
+                    child: Text(
+                      lines[index],
+                      softWrap: false,
+                      overflow: TextOverflow.visible,
+                      style: AppTextStyles.watermark(context),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
         ),
       ),
     );
