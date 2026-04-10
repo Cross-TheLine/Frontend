@@ -14,30 +14,32 @@ class VideoTakeFinish extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     return AlertDialog(
-      title: Text(
-        'IN / OUT을 판별할까요?',
-        style: AppTextStyles.whiteM(context),
-      ),
+      
+      backgroundColor: const Color.fromARGB(255, 234, 234, 234),
+      title: Text('IN / OUT을 판별할까요?',
+      style: AppTextStyles.blackMs(context)),
       content: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min, 
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '방금 촬영한 영상이 IN인지 OUT인지 판별할까요?',
-            style: AppTextStyles.body(context),
+            '두구두구 과연!!!',
+            style: AppTextStyles.greys(context),
           ),
-          SizedBox(height: AppSizes.h(context, 10)),
-          WhiteTextAppButton(
+          SizedBox(height: AppSizes.h(context, 50)),
+          TextAppButton(
             text: '판별',
+            variant: AppButtonVariant.green,
+            
             onPressed: () {
               Navigator.of(context).pop(VideoTakeFinishAction.judge);
             },
           ),
-          SizedBox(height: AppSizes.h(context, 8)),
-          WhiteTextAppButton(
+          TextAppButton(
             text: '건너뛰기',
-            variant: AppButtonVariant.secondary,
+            variant: AppButtonVariant.lightgray,
             onPressed: () {
               Navigator.of(context).pop(VideoTakeFinishAction.skip);
             },

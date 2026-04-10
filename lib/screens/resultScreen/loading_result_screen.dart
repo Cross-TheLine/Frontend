@@ -62,6 +62,7 @@ class _LoadingResultScreenState extends State<LoadingResultScreen>
       body: SafeArea(
         child: Center(
           child: Padding(
+            
             padding: AppSizes.pagePadding(context),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

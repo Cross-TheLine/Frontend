@@ -133,7 +133,7 @@ class _IntroScreenState extends State<IntroScreen>
                 duration: const Duration(milliseconds: 200),
                 child: _currentIndex == _introItems.length - 1
                     ? Center(
-                        child: WhiteTextAppButton(
+                        child: TextAppButton(
                           key: const ValueKey('guide_button'),
                           text: '매치 시작하기',
                           variant: AppButtonVariant.pillDark,

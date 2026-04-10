@@ -66,17 +66,20 @@ class _ResultSkipScreenState extends State<ResultSkipScreen>
         child: Center(
           child: Padding(
             padding: AppSizes.pagePadding(context),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('NO FIGHT !!', style: AppTextStyles.title(context)),
-                SizedBox(height: AppSizes.h(context, 12)),
-                Text(
-                  '판별을 건너뛰었습니다. 잠시 후 시작 화면으로 돌아갑니다.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.body(context),
-                ),
-              ],
+            child: SizedBox(
+              width: double.infinity,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('NO FIGHT !!', style: AppTextStyles.whiteL3(context)),
+                  SizedBox(height: AppSizes.h(context, 50)),
+                  Text(
+                    '3초 후에 시작 화면으로 돌아갑니다 :)',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.whiteSs(context),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

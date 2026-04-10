@@ -8,18 +8,18 @@ class AppColors {
   static const Color card = Color(0xFF262626);
   static const Color border = Color(0xFF3D3D3D);
 
-  static const Color primary = Color(0xFF74C845);
+  static const Color primaryGreen = Color(0xFF487747);
   static const Color secondary = Color(0xFFE6E6E6);
 
   static const Color inResult = Color(0xFF6BCB3D);
-  static const Color outResult = Color(0xFFE2574C);
+  static const Color outResult = Color.fromARGB(255, 207, 75, 66);
 
   static const Color textPrimary = Colors.white;
   static const Color textSecondary = Color(0xFFBDBDBD);
-  
 
-
-  static const mainGray = Color(0xFF3A3A3A); // 
+  static const lightgray = Color(0xFFCCCCCD);
+  static const mainGreen = Color(0xFF487747);
+  static const mainGray = Color(0xFF3A3A3A); //
   static const mainWhite = Color.fromARGB(255, 215, 215, 215);
   static const pureWhite = Color(0xFFFFFFFF);
   static const white = Color.fromARGB(255, 241, 241, 241);
@@ -31,6 +31,4 @@ class AppColors {
 
   static const helpButtonFill = Color(0xFF0D0D0D);
   static const helpButtonBorder = Color(0xFF4A4A4A);
-
-
 }

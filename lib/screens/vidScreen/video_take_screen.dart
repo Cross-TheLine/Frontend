@@ -90,23 +90,16 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
 
-      // 하단 버튼을 별도로 빼서 잘리지 않게
+      
       bottomNavigationBar: SafeArea(
         top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSizes.w(context, 20),
-            AppSizes.h(context, 8),
-            AppSizes.w(context, 20),
-            AppSizes.h(context, 12),
-          ),
-          child: WhiteTextAppButton(
+          child: TextAppButton(
             text: _isRecording ? '촬영 종료' : '촬영 시작',
             isExpanded: false,
             onPressed: _isInitialized ? _onRecordButtonPressed : null,
+            variant: AppButtonVariant.gray,
           ),
         ),
-      ),
 
       body: SafeArea( // appBar 대신 SafeArea로 띄워서 버튼과 겹치지 않게
         bottom: false,
@@ -150,7 +143,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
                       ),
                     ),
                   ),
-
+                  
                   if (_recordedVideoPath != null) ...[
                     SizedBox(height: AppSizes.h(context, 10)),
                     Text(
@@ -164,7 +157,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
               ),
             ),
 
-            
+            // 뒤로가기 버튼
             Positioned(
               left: AppSizes.w(context, 8),
               top: AppSizes.h(context, 2),
@@ -172,7 +165,6 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.arrow_back),
                 color: Colors.white,
-                tooltip: '뒤로가기',
               ),
             ),
           ],
