@@ -171,7 +171,7 @@ class _MainScreenState extends State<MainScreen>
                         backgroundColor: AppColors.accentGreen.withOpacity(0.95),
                         borderColor: Colors.white.withOpacity(0.16),
                         shadowColor: AppColors.accentGreen.withOpacity(0.28),
-                        shadowBlurRadius: 34,
+                        shadowBlurRadius: 40,
                         shadowOffset: const Offset(0, 18),
                         onPressed: _isCheckingStart ? null : _onStartMatch,
                         child: _isCheckingStart

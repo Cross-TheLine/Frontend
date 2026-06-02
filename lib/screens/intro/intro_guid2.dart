@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:native_device_orientation/native_device_orientation.dart';
 
-import '../compo/app_colors.dart';
-import '../compo/app_sizes.dart';
-import '../compo/app_text_styles.dart';
-import '../routes.dart';
-import '../services/screen_orientation.dart';
+import '../../compo/app_colors.dart';
+import '../../compo/app_sizes.dart';
+import '../../compo/app_text_styles.dart';
+import '../../routes.dart';
+import '../../services/screen_orientation.dart';
 
 class IntroGuid2Screen extends StatefulWidget {
   const IntroGuid2Screen({super.key});

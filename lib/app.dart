@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'compo/app_colors.dart';
-import 'intro/intro_guid1.dart';
-import 'intro/intro_guid2.dart';
-import 'intro/intro_select_play.dart';
+import 'screens/intro/intro_guid1.dart';
+import 'screens/intro/intro_guid2.dart';
+import 'screens/intro/intro_guid0.dart';
 import 'routes.dart';
 import 'screens/mainScreen/how_to_use_screen.dart';
 import 'screens/mainScreen/main_screen.dart';

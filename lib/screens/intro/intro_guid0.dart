@@ -3,11 +3,11 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../compo/app_colors.dart';
-import '../compo/app_sizes.dart';
-import '../compo/glass_button.dart';
-import '../routes.dart';
-import '../services/screen_orientation.dart';
+import '../../compo/app_colors.dart';
+import '../../compo/app_sizes.dart';
+import '../../compo/glass_button.dart';
+import '../../routes.dart';
+import '../../services/screen_orientation.dart';
 
 
 class IntroSelectPlayScreen extends StatefulWidget {

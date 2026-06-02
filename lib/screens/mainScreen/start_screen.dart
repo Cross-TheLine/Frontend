@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -57,8 +55,7 @@ class _StartScreenState extends State<StartScreen>
               final double screenWidth = constraints.maxWidth;
               final double screenHeight = constraints.maxHeight;
               final double horizontalPadding = AppSizes.w(context, 48);
-              final double ballSize =
-                  (screenWidth * 0.64).clamp(214.0, 320.0).toDouble();
+              (screenWidth * 0.64).clamp(214.0, 320.0).toDouble();
 
               return Stack(
                 clipBehavior: Clip.none,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../compo/app_colors.dart';
-import '../compo/app_sizes.dart';
-import '../compo/glass_button.dart';
-import '../routes.dart';
-import '../services/screen_orientation.dart';
+import '../../compo/app_colors.dart';
+import '../../compo/app_sizes.dart';
+import '../../compo/glass_button.dart';
+import '../../routes.dart';
+import '../../services/screen_orientation.dart';
 
 
 
@@ -146,6 +146,7 @@ class _JudgeButtonGuideCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 손까락 아이콘
           Container(
             width: AppSizes.w(context, 94),
             height: AppSizes.w(context, 94),
