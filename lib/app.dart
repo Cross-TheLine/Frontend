@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 
 import 'compo/app_colors.dart';
+import 'screens/intro/intro_guid1.dart';
+import 'screens/intro/intro_guid2.dart';
+import 'screens/intro/intro_guid0.dart';
 import 'routes.dart';
 import 'screens/mainScreen/how_to_use_screen.dart';
-import 'intro/intro_select_play.dart';
 import 'screens/mainScreen/main_screen.dart';
 import 'screens/mainScreen/saved_videos_screen.dart';
 import 'screens/mainScreen/start_screen.dart';
 import 'screens/resultScreen/loading_result_screen.dart';
 import 'screens/resultScreen/result_screen.dart';
 import 'screens/resultScreen/result_skip_screen.dart';
-import 'intro/intro_guid2.dart';
 import 'screens/vidScreen/video_pick_screen.dart';
 import 'screens/vidScreen/video_take_screen.dart';
 import 'services/screen_orientation.dart';
@@ -78,15 +79,22 @@ class CrossTheLine extends StatelessWidget {
           settings: settings,
         );
 
-      case AppRoutes.savedVideos:
+      case AppRoutes.introGuid1:
         return MaterialPageRoute(
-          builder: (_) => const SavedVideosScreen(),
+          builder: (_) => const IntroGuid1Screen(),
           settings: settings,
         );
 
+      case AppRoutes.introGuid2:
       case AppRoutes.videoGuideline:
         return MaterialPageRoute(
-          builder: (_) => const VideoGuidelineScreen(),
+          builder: (_) => const IntroGuid2Screen(),
+          settings: settings,
+        );
+
+      case AppRoutes.savedVideos:
+        return MaterialPageRoute(
+          builder: (_) => const SavedVideosScreen(),
           settings: settings,
         );
 

@@ -1,9 +1,15 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../compo/app_colors.dart';
 import '../../compo/app_sizes.dart';
 import '../../services/screen_orientation.dart';
+
+
+
+
 
 class SavedVideosScreen extends StatefulWidget {
   const SavedVideosScreen({super.key});
@@ -19,14 +25,77 @@ class _SavedVideosScreenState extends State<SavedVideosScreen>
 
   final ScrollController _scrollController = ScrollController();
 
+  late final DateTime _today;
+  late DateTime _selectedDate;
+  late DateTime _visibleMonth;
+  late final List<_SavedVideoData> _sampleVideos;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _today = _dateOnly(DateTime.now());
+    _selectedDate = _today;
+    _visibleMonth = DateTime(_today.year, _today.month, 1);
+
+    // TODO: 백엔드 연동 후 이 리스트를 API 응답으로 교체하세요.
+    // 현재는 오늘 날짜에 예시 영상 1개가 있다고 가정합니다.
+    _sampleVideos = <_SavedVideoData>[
+      _SavedVideoData(
+        id: 'sample-video-01',
+        recordedAt: DateTime(
+          _today.year,
+          _today.month,
+          _today.day,
+          20,
+          43,
+        ),
+        result: 'OUT',
+        thumbnailUrl: null,
+        thumbnailAssetPath: null,
+        videoUrl: null,
+      ),
+    ];
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
 
+  List<_SavedVideoData> get _selectedDateVideos {
+    return _sampleVideos
+        .where((video) => _isSameDate(video.recordedAt, _selectedDate))
+        .toList(growable: false);
+  }
+
+  Set<String> get _videoDateKeys {
+    return _sampleVideos.map((video) => _dateKey(video.recordedAt)).toSet();
+  }
+
+  void _goPreviousMonth() {
+    setState(() {
+      _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month - 1, 1);
+    });
+  }
+
+  void _goNextMonth() {
+    setState(() {
+      _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month + 1, 1);
+    });
+  }
+
+  void _selectDate(DateTime date) {
+    setState(() {
+      _selectedDate = _dateOnly(date);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final List<_SavedVideoData> selectedVideos = _selectedDateVideos;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark.copyWith(
         statusBarColor: Colors.transparent,
@@ -36,58 +105,331 @@ class _SavedVideosScreenState extends State<SavedVideosScreen>
       child: Scaffold(
         backgroundColor: AppColors.screenWhite,
         body: SafeArea(
-          child: Scrollbar(
-            controller: _scrollController,
-            thumbVisibility: true,
-            radius: const Radius.circular(99),
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              physics: const BouncingScrollPhysics(),
+          child: Stack(
+            children: [
+              const Positioned.fill(child: _SavedVideosSoftBackground()),
+              const Positioned.fill(child: _SavedVideosWatermark()),
+              Scrollbar(
+                controller: _scrollController,
+                thumbVisibility: true,
+                radius: const Radius.circular(99),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    AppSizes.w(context, 24),
+                    AppSizes.h(context, 22),
+                    AppSizes.w(context, 28),
+                    AppSizes.h(context, 28),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: AppColors.mainTextDark,
+                          size: AppSizes.sp(context, 24),
+                        ),
+                        style: IconButton.styleFrom(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size(
+                            AppSizes.w(context, 44),
+                            AppSizes.w(context, 44),
+                          ),
+                          alignment: Alignment.centerLeft,
+                        ),
+                      ),
+                      SizedBox(height: AppSizes.h(context, 26)),
+                      _CalendarCard(
+                        visibleMonth: _visibleMonth,
+                        selectedDate: _selectedDate,
+                        today: _today,
+                        videoDateKeys: _videoDateKeys,
+                        onPreviousMonth: _goPreviousMonth,
+                        onNextMonth: _goNextMonth,
+                        onDateSelected: _selectDate,
+                      ),
+                      if (selectedVideos.isNotEmpty) ...[
+                        SizedBox(height: AppSizes.h(context, 26)),
+                        ...List.generate(selectedVideos.length, (index) {
+                          final _SavedVideoData video = selectedVideos[index];
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: index == selectedVideos.length - 1
+                                  ? 0
+                                  : AppSizes.h(context, 24),
+                            ),
+                            child: _SavedVideoItem(video: video),
+                          );
+                        }),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+class _SavedVideosSoftBackground extends StatelessWidget {
+  const _SavedVideosSoftBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.screenWhite,
+              Colors.white.withOpacity(0.96),
+              const Color(0xFFEAF7F0).withOpacity(0.42),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SavedVideosWatermark extends StatelessWidget {
+  const _SavedVideosWatermark();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Align(
+        alignment: Alignment.center,
+        child: Transform.rotate(
+          angle: -0.04,
+          child: Text(
+            'DO NOT CROSS\nTHE LINE',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.softWatermark.withOpacity(0.32), // ← 더 연하게
+              fontSize: AppSizes.sp(context, 72), // ← 크게
+              fontWeight: FontWeight.w900,
+              fontStyle: FontStyle.italic,
+              height: 0.95,
+              letterSpacing: -1,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+class _CalendarCard extends StatelessWidget {
+  const _CalendarCard({
+    required this.visibleMonth,
+    required this.selectedDate,
+    required this.today,
+    required this.videoDateKeys,
+    required this.onPreviousMonth,
+    required this.onNextMonth,
+    required this.onDateSelected,
+  });
+
+  final DateTime visibleMonth;
+  final DateTime selectedDate;
+  final DateTime today;
+  final Set<String> videoDateKeys;
+  final VoidCallback onPreviousMonth;
+  final VoidCallback onNextMonth;
+  final ValueChanged<DateTime> onDateSelected;
+
+  static const List<String> _weekdays = <String>[
+    '일',
+    '월',
+    '화',
+    '수',
+    '목',
+    '금',
+    '토',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final BorderRadius radius = BorderRadius.circular(AppSizes.w(context, 18));
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: radius,
+              border: Border.all(color: Colors.white.withOpacity(0.72)),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.66),
+                  Colors.white.withOpacity(0.38),
+                ],
+              ),
+            ),
+            child: Padding(
               padding: EdgeInsets.fromLTRB(
-                AppSizes.w(context, 24),
-                AppSizes.h(context, 22),
-                AppSizes.w(context, 28),
-                AppSizes.h(context, 28),
+                AppSizes.w(context, 16),
+                AppSizes.h(context, 16),
+                AppSizes.w(context, 16),
+                AppSizes.h(context, 16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: AppColors.mainTextDark,
-                      size: AppSizes.sp(context, 24),
-                    ),
-                    style: IconButton.styleFrom(
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size(
-                        AppSizes.w(context, 44),
-                        AppSizes.w(context, 44),
+                  Row(
+                    children: [
+                      Text(
+                        '${visibleMonth.year}년 ${visibleMonth.month}월',
+                        style: TextStyle(
+                          color: AppColors.mainTextDark,
+                          fontSize: AppSizes.sp(context, 16),
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                      alignment: Alignment.centerLeft,
-                    ),
+                      SizedBox(width: AppSizes.w(context, 2)),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.accentGreen,
+                        size: AppSizes.sp(context, 24),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: onPreviousMonth,
+                        icon: Icon(
+                          Icons.chevron_left_rounded,
+                          color: AppColors.accentGreen,
+                          size: AppSizes.sp(context, 25),
+                        ),
+                        style: IconButton.styleFrom(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size(
+                            AppSizes.w(context, 34),
+                            AppSizes.w(context, 34),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: AppSizes.w(context, 10)),
+                      IconButton(
+                        onPressed: onNextMonth,
+                        icon: Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.accentGreen,
+                          size: AppSizes.sp(context, 25),
+                        ),
+                        style: IconButton.styleFrom(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size(
+                            AppSizes.w(context, 34),
+                            AppSizes.w(context, 34),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: AppSizes.h(context, 26)),
-                  const _CalendarCard(),
-                  SizedBox(height: AppSizes.h(context, 26)),
-                  const _SavedVideoItem(
-                    title: '2026년 3월 15일 8시 43분',
-                    result: 'OUT',
-                    variant: 0,
-                  ),
-                  SizedBox(height: AppSizes.h(context, 24)),
-                  const _SavedVideoItem(
-                    title: '2026년 3월 12일 7시 18분',
-                    result: 'IN',
-                    variant: 1,
-                  ),
-                  SizedBox(height: AppSizes.h(context, 24)),
-                  const _SavedVideoItem(
-                    title: '2026년 3월 9일 6시 55분',
-                    result: 'OUT',
-                    variant: 2,
+                  SizedBox(height: AppSizes.h(context, 10)),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final double cellWidth = constraints.maxWidth / 7;
+                      final DateTime firstDay = DateTime(
+                        visibleMonth.year,
+                        visibleMonth.month,
+                        1,
+                      );
+                      final int leadingEmptyCellCount = firstDay.weekday % 7;
+                      final int daysInMonth = DateTime(
+                        visibleMonth.year,
+                        visibleMonth.month + 1,
+                        0,
+                      ).day;
+                      final int totalCellCount =
+                          ((leadingEmptyCellCount + daysInMonth) / 7).ceil() * 7;
+
+                      return Column(
+                        children: [
+                          Row(
+                            children: _weekdays.map((day) {
+                              return SizedBox(
+                                width: cellWidth,
+                                height: AppSizes.h(context, 26),
+                                child: Center(
+                                  child: Text(
+                                    day,
+                                    style: TextStyle(
+                                      color: const Color(0xFFC5C5C5),
+                                      fontSize: AppSizes.sp(context, 12),
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          Wrap(
+                            children: List.generate(totalCellCount, (index) {
+                              final int day = index - leadingEmptyCellCount + 1;
+
+                              if (day < 1 || day > daysInMonth) {
+                                return SizedBox(
+                                  width: cellWidth,
+                                  height: AppSizes.h(context, 48),
+                                );
+                              }
+
+                              final DateTime date = DateTime(
+                                visibleMonth.year,
+                                visibleMonth.month,
+                                day,
+                              );
+                              final bool selected = _isSameDate(date, selectedDate);
+                              final bool isToday = _isSameDate(date, today);
+                              final bool hasVideo =
+                                  videoDateKeys.contains(_dateKey(date));
+
+                              return SizedBox(
+                                width: cellWidth,
+                                height: AppSizes.h(context, 48),
+                                child: Center(
+                                  child: _CalendarDay(
+                                    day: day,
+                                    selected: selected,
+                                    isToday: isToday,
+                                    hasVideo: hasVideo,
+                                    onTap: () => onDateSelected(date),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -99,184 +441,60 @@ class _SavedVideosScreenState extends State<SavedVideosScreen>
   }
 }
 
-class _CalendarCard extends StatelessWidget {
-  const _CalendarCard();
-
-  static const List<String> _weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        AppSizes.w(context, 16),
-        AppSizes.h(context, 16),
-        AppSizes.w(context, 16),
-        AppSizes.h(context, 14),
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
-        borderRadius: BorderRadius.circular(AppSizes.w(context, 13)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'April 2025',
-                style: TextStyle(
-                  color: AppColors.mainTextDark,
-                  fontSize: AppSizes.sp(context, 16),
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              SizedBox(width: AppSizes.w(context, 2)),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.vividBlue,
-                size: AppSizes.sp(context, 24),
-              ),
-              const Spacer(),
-              Icon(
-                Icons.chevron_left_rounded,
-                color: AppColors.vividBlue,
-                size: AppSizes.sp(context, 25),
-              ),
-              SizedBox(width: AppSizes.w(context, 16)),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.vividBlue,
-                size: AppSizes.sp(context, 25),
-              ),
-            ],
-          ),
-          SizedBox(height: AppSizes.h(context, 10)),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final double cellWidth = constraints.maxWidth / 7;
-              final List<int?> cells = [
-                null,
-                null,
-                ...List<int>.generate(30, (index) => index + 1),
-                null,
-                null,
-                null,
-              ];
-
-              return Column(
-                children: [
-                  Row(
-                    children: _weekdays.map((day) {
-                      return SizedBox(
-                        width: cellWidth,
-                        height: AppSizes.h(context, 26),
-                        child: Center(
-                          child: Text(
-                            day,
-                            style: TextStyle(
-                              color: const Color(0xFFC5C5C5),
-                              fontSize: AppSizes.sp(context, 12),
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  Wrap(
-                    children: cells.map((day) {
-                      return SizedBox(
-                        width: cellWidth,
-                        height: AppSizes.h(context, 48),
-                        child: Center(
-                          child: day == null
-                              ? const SizedBox.shrink()
-                              : _CalendarDay(day: day, selected: day == 20),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              );
-            },
-          ),
-          Divider(
-            height: AppSizes.h(context, 18),
-            color: const Color(0xFFEDEDED),
-          ),
-          Row(
-            children: [
-              Text(
-                'Time',
-                style: TextStyle(
-                  color: AppColors.mainTextDark,
-                  fontSize: AppSizes.sp(context, 16),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSizes.w(context, 12),
-                  vertical: AppSizes.h(context, 7),
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFEFEF),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '9:41 AM',
-                  style: TextStyle(
-                    color: AppColors.mainTextDark,
-                    fontSize: AppSizes.sp(context, 16),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _CalendarDay extends StatelessWidget {
-  const _CalendarDay({required this.day, required this.selected});
+  const _CalendarDay({
+    required this.day,
+    required this.selected,
+    required this.isToday,
+    required this.hasVideo,
+    required this.onTap,
+  });
 
   final int day;
   final bool selected;
+  final bool isToday;
+  final bool hasVideo;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final Color textColor = day == 1 || selected
-        ? AppColors.vividBlue
-        : AppColors.mainTextDark;
+    final Color selectedBackground = hasVideo
+        ? AppColors.accentGreen.withOpacity(0.16)
+        : const Color(0xFFE9E9E9).withOpacity(0.92);
+    final Color textColor = hasVideo
+        ? AppColors.accentGreen
+        : selected
+            ? const Color(0xFF8A8A8A)
+            : AppColors.mainTextDark;
+    final Color? todayBorderColor = isToday && !selected
+        ? (hasVideo
+            ? AppColors.accentGreen.withOpacity(0.34)
+            : const Color(0xFFBDBDBD).withOpacity(0.48))
+        : null;
 
-    return Container(
-      width: selected ? AppSizes.w(context, 40) : null,
-      height: selected ? AppSizes.w(context, 40) : null,
-      decoration: selected
-          ? const BoxDecoration(
-              color: AppColors.lightBlue,
-              shape: BoxShape.circle,
-            )
-          : null,
-      child: Center(
-        child: Text(
-          '$day',
-          style: TextStyle(
-            color: textColor,
-            fontSize: AppSizes.sp(context, 20),
-            fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        width: selected ? AppSizes.w(context, 40) : AppSizes.w(context, 36),
+        height: selected ? AppSizes.w(context, 40) : AppSizes.w(context, 36),
+        decoration: BoxDecoration(
+          color: selected ? selectedBackground : Colors.transparent,
+          shape: BoxShape.circle,
+          border: todayBorderColor == null
+              ? null
+              : Border.all(color: todayBorderColor),
+        ),
+        child: Center(
+          child: Text(
+            '$day',
+            style: TextStyle(
+              color: textColor,
+              fontSize: AppSizes.sp(context, 20),
+              fontWeight: hasVideo || selected ? FontWeight.w800 : FontWeight.w500,
+            ),
           ),
         ),
       ),
@@ -285,64 +503,19 @@ class _CalendarDay extends StatelessWidget {
 }
 
 class _SavedVideoItem extends StatelessWidget {
-  const _SavedVideoItem({
-    required this.title,
-    required this.result,
-    required this.variant,
-  });
+  const _SavedVideoItem({required this.video});
 
-  final String title;
-  final String result;
-  final int variant;
+  final _SavedVideoData video;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          height: AppSizes.h(context, 176),
-          width: double.infinity,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSizes.w(context, 7)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 18,
-                offset: const Offset(0, 9),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppSizes.w(context, 7)),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _VideoThumbnailPainter(variant: variant),
-                  ),
-                ),
-                Container(
-                  width: AppSizes.w(context, 62),
-                  height: AppSizes.w(context, 62),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.58),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.play_arrow_rounded,
-                    color: Colors.black,
-                    size: AppSizes.sp(context, 43),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        _SavedVideoThumbnail(video: video),
         SizedBox(height: AppSizes.h(context, 9)),
         Text(
-          title,
+          _formatKoreanDateTime(video.recordedAt),
           style: TextStyle(
             color: Colors.black,
             fontSize: AppSizes.sp(context, 12),
@@ -351,7 +524,7 @@ class _SavedVideoItem extends StatelessWidget {
           ),
         ),
         Text(
-          '결과 : $result',
+          '결과 : ${video.result}',
           style: TextStyle(
             color: Colors.black,
             fontSize: AppSizes.sp(context, 12),
@@ -364,136 +537,161 @@ class _SavedVideoItem extends StatelessWidget {
   }
 }
 
-class _VideoThumbnailPainter extends CustomPainter {
-  const _VideoThumbnailPainter({required this.variant});
+class _SavedVideoThumbnail extends StatelessWidget {
+  const _SavedVideoThumbnail({required this.video});
 
-  final int variant;
+  final _SavedVideoData video;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final Rect rect = Offset.zero & size;
-    final Paint skyPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: variant.isEven
-            ? [
-                const Color(0xFFE7BE8C),
-                const Color(0xFFD49D71),
-                const Color(0xFF87AF9B),
-              ]
-            : [
-                const Color(0xFFADB8C8),
-                const Color(0xFF8999AE),
-                const Color(0xFF82AA8B),
-              ],
-      ).createShader(rect);
-    canvas.drawRect(rect, skyPaint);
+  Widget build(BuildContext context) {
+    return Container(
+      height: AppSizes.h(context, 176),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppSizes.w(context, 7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 9),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppSizes.w(context, 7)),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned.fill(child: _ThumbnailImage(video: video)),
+            Container(
+              width: AppSizes.w(context, 62),
+              height: AppSizes.w(context, 62),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.58),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.play_arrow_rounded,
+                color: Colors.black,
+                size: AppSizes.sp(context, 43),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-    final Paint crowdPaint = Paint()..color = Colors.white.withOpacity(0.32);
-    for (int i = 0; i < 44; i++) {
-      final double x = size.width * (i / 44);
-      final double y = size.height * (0.18 + (i % 3) * 0.025);
-      canvas.drawCircle(Offset(x, y), 3.0, crowdPaint);
+class _ThumbnailImage extends StatelessWidget {
+  const _ThumbnailImage({required this.video});
+
+  final _SavedVideoData video;
+
+  @override
+  Widget build(BuildContext context) {
+    final String? thumbnailUrl = video.thumbnailUrl;
+    final String? thumbnailAssetPath = video.thumbnailAssetPath;
+
+    if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
+      return Image.network(
+        thumbnailUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const _ExampleVideoPreview(),
+      );
     }
 
-    final Paint wallPaint = Paint()..color = const Color(0xFF2F8C78).withOpacity(0.82);
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height * 0.27, size.width, size.height * 0.16),
-      wallPaint,
-    );
+    if (thumbnailAssetPath != null && thumbnailAssetPath.isNotEmpty) {
+      return Image.asset(
+        thumbnailAssetPath,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const _ExampleVideoPreview(),
+      );
+    }
 
-    final Paint courtFill = Paint()..color = const Color(0xFF4E6DB2).withOpacity(0.88);
-    final Path court = Path()
-      ..moveTo(0, size.height * 0.50)
-      ..lineTo(size.width, size.height * 0.43)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(court, courtFill);
-
-    final Paint outerCourt = Paint()..color = const Color(0xFF74A770).withOpacity(0.84);
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height * 0.76, size.width, size.height * 0.24),
-      outerCourt,
-    );
-
-    final Paint linePaint = Paint()
-      ..color = Colors.white.withOpacity(0.82)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(
-      Offset(0, size.height * 0.77),
-      Offset(size.width, size.height * 0.69),
-      linePaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.12, size.height),
-      Offset(size.width * 0.50, size.height * 0.46),
-      linePaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.72, size.height),
-      Offset(size.width * 0.42, size.height * 0.47),
-      linePaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.45, size.height * 0.48),
-      Offset(size.width * 0.48, size.height),
-      linePaint,
-    );
-
-    final Paint net = Paint()
-      ..color = Colors.black.withOpacity(0.35)
-      ..strokeWidth = 2;
-    canvas.drawLine(
-      Offset(0, size.height * 0.50),
-      Offset(size.width, size.height * 0.42),
-      net,
-    );
-
-    _drawPlayer(canvas, size);
+    return const _ExampleVideoPreview();
   }
+}
 
-  void _drawPlayer(Canvas canvas, Size size) {
-    final Paint player = Paint()..color = const Color(0xFF1D2E31).withOpacity(0.92);
-    final Offset bodyCenter = Offset(size.width * 0.52, size.height * 0.56);
-    canvas.drawCircle(Offset(bodyCenter.dx, bodyCenter.dy - 28), 10, player);
-    canvas.drawLine(bodyCenter, Offset(bodyCenter.dx, bodyCenter.dy + 42), player..strokeWidth = 7);
-    canvas.drawLine(bodyCenter, Offset(bodyCenter.dx - 34, bodyCenter.dy + 5), player..strokeWidth = 5);
-    canvas.drawLine(bodyCenter, Offset(bodyCenter.dx + 34, bodyCenter.dy + 4), player..strokeWidth = 5);
-    canvas.drawLine(
-      Offset(bodyCenter.dx, bodyCenter.dy + 42),
-      Offset(bodyCenter.dx - 20, bodyCenter.dy + 78),
-      player..strokeWidth = 6,
-    );
-    canvas.drawLine(
-      Offset(bodyCenter.dx, bodyCenter.dy + 42),
-      Offset(bodyCenter.dx + 24, bodyCenter.dy + 76),
-      player..strokeWidth = 6,
-    );
-
-    final Paint racket = Paint()
-      ..color = Colors.white.withOpacity(0.82)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawLine(
-      Offset(bodyCenter.dx + 33, bodyCenter.dy + 4),
-      Offset(bodyCenter.dx + 58, bodyCenter.dy - 18),
-      racket,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(bodyCenter.dx + 66, bodyCenter.dy - 26),
-        width: 24,
-        height: 34,
-      ),
-      racket,
-    );
-  }
+class _ExampleVideoPreview extends StatelessWidget {
+  const _ExampleVideoPreview();
 
   @override
-  bool shouldRepaint(covariant _VideoThumbnailPainter oldDelegate) {
-    return oldDelegate.variant != variant;
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1F2933),
+            const Color(0xFF52616B).withOpacity(0.92),
+            const Color(0xFF2C7A5B).withOpacity(0.86),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.videocam_rounded,
+              color: Colors.white.withOpacity(0.86),
+              size: AppSizes.sp(context, 34),
+            ),
+            SizedBox(height: AppSizes.h(context, 8)),
+            Text(
+              '예시 영상',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.92),
+                fontSize: AppSizes.sp(context, 13),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
+}
+
+class _SavedVideoData {
+  const _SavedVideoData({
+    required this.id,
+    required this.recordedAt,
+    required this.result,
+    this.thumbnailUrl,
+    this.thumbnailAssetPath,
+    this.videoUrl,
+  });
+
+  final String id;
+  final DateTime recordedAt;
+  final String result;
+  final String? thumbnailUrl;
+  final String? thumbnailAssetPath;
+  final String? videoUrl;
+}
+
+
+
+
+DateTime _dateOnly(DateTime date) {
+  return DateTime(date.year, date.month, date.day);
+}
+
+bool _isSameDate(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+String _dateKey(DateTime date) {
+  final DateTime normalized = _dateOnly(date);
+  final String month = normalized.month.toString().padLeft(2, '0');
+  final String day = normalized.day.toString().padLeft(2, '0');
+  return '${normalized.year}-$month-$day';
+}
+
+String _formatKoreanDateTime(DateTime dateTime) {
+  return '${dateTime.year}년 ${dateTime.month}월 ${dateTime.day}일 '
+      '${dateTime.hour}시 ${dateTime.minute.toString().padLeft(2, '0')}분';
 }

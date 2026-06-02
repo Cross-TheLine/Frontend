@@ -3,11 +3,11 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../compo/app_colors.dart';
-import '../compo/app_sizes.dart';
-import '../compo/glass_button.dart';
-import '../routes.dart';
-import '../services/screen_orientation.dart';
+import '../../compo/app_colors.dart';
+import '../../compo/app_sizes.dart';
+import '../../compo/glass_button.dart';
+import '../../routes.dart';
+import '../../services/screen_orientation.dart';
 
 
 class IntroSelectPlayScreen extends StatefulWidget {
@@ -32,7 +32,7 @@ class _IntroSelectPlayScreenState extends State<IntroSelectPlayScreen>
 
   void _goNext() {
     if (_selectedType == null) return;
-    Navigator.pushNamed(context, AppRoutes.videoGuideline); //이후 intro_guid1로 이동되게 변경
+    Navigator.pushNamed(context, AppRoutes.introGuid1);
   }
 
   @override
