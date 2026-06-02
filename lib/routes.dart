@@ -5,9 +5,11 @@ class AppRoutes {
   static const String main = '/main';
   static const String howToUse = '/how-to-use';
   static const String introSelectPlay = '/intro-select-play';
+  static const String introGuid1 = '/intro-guid1';
+  static const String introGuid2 = '/intro-guid2';
   static const String savedVideos = '/saved-videos';
 
-  // 기존 촬영/결과 플로우는 intro_select_play 이후 연결용으로 유지합니다.
+  // 기존 촬영/결과 플로우는 신규 intro_guid 흐름 이후 연결용으로 유지합니다.
   static const String intro = '/intro';
   static const String videoGuideline = '/video-guideline';
   static const String videoTake = '/video-take';

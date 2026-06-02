@@ -10,15 +10,15 @@ import '../compo/app_text_styles.dart';
 import '../routes.dart';
 import '../services/screen_orientation.dart';
 
-class VideoGuidelineScreen extends StatefulWidget {
-  const VideoGuidelineScreen({super.key});
+class IntroGuid2Screen extends StatefulWidget {
+  const IntroGuid2Screen({super.key});
 
   @override
-  State<VideoGuidelineScreen> createState() => _VideoGuidelineScreenState();
+  State<IntroGuid2Screen> createState() => _IntroGuid2ScreenState();
 }
 
-class _VideoGuidelineScreenState extends State<VideoGuidelineScreen>
-    with ScreenOrientationMixin<VideoGuidelineScreen> {
+class _IntroGuid2ScreenState extends State<IntroGuid2Screen>
+    with ScreenOrientationMixin<IntroGuid2Screen> {
   @override
   AppScreenOrientation get screenOrientation =>
       AppScreenOrientation.guide;

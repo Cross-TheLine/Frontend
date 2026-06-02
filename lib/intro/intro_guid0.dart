@@ -32,7 +32,7 @@ class _IntroSelectPlayScreenState extends State<IntroSelectPlayScreen>
 
   void _goNext() {
     if (_selectedType == null) return;
-    Navigator.pushNamed(context, AppRoutes.videoGuideline); //이후 intro_guid1로 이동되게 변경
+    Navigator.pushNamed(context, AppRoutes.introGuid1);
   }
 
   @override
