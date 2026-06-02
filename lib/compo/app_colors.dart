@@ -29,6 +29,16 @@ class AppColors {
   static const startWatermark = Color(0xFF2A2A2A);
   static const startSubtitle = Color.fromARGB(255, 217, 217, 217);
 
+
+
+  static const Color screenWhite = Color(0xFFF8F8F8);
+  static const Color mainTextDark = Color(0xFF3B3B3B);
+  static const Color mutedTextDark = Color(0xFF8A8A8A);
+  static const Color softWatermark = Color(0xFFE9E9E9);
+  static const Color accentGreen = Color(0xFF3CCB78);
+  static const Color lightBlue = Color(0xFFE2F4FF);
+  static const Color vividBlue = Color(0xFF0A84FF);
+
   static const helpButtonFill = Color(0xFF0D0D0D);
   static const helpButtonBorder = Color(0xFF4A4A4A);
 }

@@ -10,10 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
   lottie: ^3.3.2 
-  native_device_orientation: ^2.1.0 # 화면 방향 감지 패키지
+  native_device_orientation: ^2.1.0
   shared_preferences: ^2.5.5
   camera: ^0.11.0+2
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -24,8 +23,12 @@ flutter:
 
   assets:
     - assets/images/tennis_ball.png
-    - assets/images/intro1.png
-    - assets/images/intro2.png
     - assets/lottie/rotate_guide.json
     - assets/lottie/tennis_ball.json
+    - assets/markers/aruco_marker_0.png
+    - assets/images/howto_step_01.png
+    - assets/images/howto_step_02.png
+    - assets/images/howto_step_03.png
+    - assets/images/howto_step_04.png
+    - assets/images/howto_step_05.png
 
