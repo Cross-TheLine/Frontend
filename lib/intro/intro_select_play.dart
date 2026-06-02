@@ -3,11 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../compo/app_colors.dart';
-import '../../compo/app_sizes.dart';
-import '../../compo/glass_button.dart';
-import '../../routes.dart';
-import '../../services/screen_orientation.dart';
+import '../compo/app_colors.dart';
+import '../compo/app_sizes.dart';
+import '../compo/glass_button.dart';
+import '../routes.dart';
+import '../services/screen_orientation.dart';
+
 
 class IntroSelectPlayScreen extends StatefulWidget {
   const IntroSelectPlayScreen({super.key});
@@ -31,7 +32,7 @@ class _IntroSelectPlayScreenState extends State<IntroSelectPlayScreen>
 
   void _goNext() {
     if (_selectedType == null) return;
-    Navigator.pushNamed(context, AppRoutes.videoGuideline);
+    Navigator.pushNamed(context, AppRoutes.videoGuideline); //이후 intro_guid1로 이동되게 변경
   }
 
   @override
@@ -75,14 +76,14 @@ class _IntroSelectPlayScreenState extends State<IntroSelectPlayScreen>
                         alignment: Alignment.centerLeft,
                       ),
                     ),
-                    SizedBox(height: AppSizes.h(context, 38)),
+                    SizedBox(height: AppSizes.h(context, 10)),
                     Text(
                       '경기 방식을\n선택해주세요',
                       style: TextStyle(
                         color: AppColors.mainTextDark,
-                        fontSize: AppSizes.sp(context, 34),
-                        fontWeight: FontWeight.w900,
-                        height: 1.08,
+                        fontSize: AppSizes.sp(context, 30),
+                        fontWeight: FontWeight.w700,
+                        height: 1.1,
                         letterSpacing: -1,
                       ),
                     ),

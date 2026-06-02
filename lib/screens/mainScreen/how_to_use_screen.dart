@@ -7,6 +7,7 @@ import '../../compo/glass_button.dart';
 import '../../routes.dart';
 import '../../services/local_storage_service.dart';
 import '../../services/screen_orientation.dart';
+import '../marker/marker_download.dart';
 
 class HowToUseScreen extends StatefulWidget {
   const HowToUseScreen({
@@ -19,6 +20,8 @@ class HowToUseScreen extends StatefulWidget {
   @override
   State<HowToUseScreen> createState() => _HowToUseScreenState();
 }
+
+
 
 // 사용 방법 안내 화면
 class _HowToUseScreenState extends State<HowToUseScreen>
@@ -49,11 +52,7 @@ class _HowToUseScreenState extends State<HowToUseScreen>
   }
 
   void _onMarkerDownload() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('마커 다운로드 파일 경로를 연결하면 됩니다.'),
-      ),
-    );
+    MarkerDownload.run(context);
   }
 
   Future<void> _onReady() async {
@@ -201,6 +200,7 @@ class _HowToUseScreenState extends State<HowToUseScreen>
     );
   }
 }
+
 
 class _TopBackButton extends StatelessWidget {
   const _TopBackButton({required this.onPressed});

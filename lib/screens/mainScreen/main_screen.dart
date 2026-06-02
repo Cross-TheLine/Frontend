@@ -7,6 +7,7 @@ import '../../compo/glass_button.dart';
 import '../../routes.dart';
 import '../../services/local_storage_service.dart';
 import '../../services/screen_orientation.dart';
+import '../marker/marker_download.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -81,13 +82,9 @@ class _MainScreenState extends State<MainScreen>
     Navigator.pushNamed(context, AppRoutes.savedVideos);
   }
 
-  void _showMarkerDownloadNotice() {
+  void _onMarkerDownload() {
     _closeMenu();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('마커 다운로드 기능은 다음 단계에서 연결하면 됩니다.'),
-      ),
-    );
+    MarkerDownload.run(context);
   }
 
   @override
@@ -203,7 +200,7 @@ class _MainScreenState extends State<MainScreen>
                     _MenuOverlay(
                       onClose: _closeMenu,
                       onSavedVideos: _openSavedVideos,
-                      onMarkerDownload: _showMarkerDownloadNotice,
+                      onMarkerDownload: _onMarkerDownload,
                       onHowToUse: _openHowToUse,
                     ),
                 ],
