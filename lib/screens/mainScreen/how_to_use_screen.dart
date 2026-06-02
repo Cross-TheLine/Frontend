@@ -282,7 +282,7 @@ class _GuideStepSection extends StatelessWidget {
             isChecked: isChecked,
           ),
           SizedBox(height: AppSizes.h(context, 20)),
-          const _MiniCourtGuide(),
+          _GuideStepAssetImage(imageAssetPath: step.imageAssetPath),
           SizedBox(height: AppSizes.h(context, 18)),
           if (step.number == '03') ...[
             Center(
@@ -397,8 +397,10 @@ class _GuideStepTextPanel extends StatelessWidget {
   }
 }
 
-class _MiniCourtGuide extends StatelessWidget {
-  const _MiniCourtGuide();
+class _GuideStepAssetImage extends StatelessWidget {
+  const _GuideStepAssetImage({required this.imageAssetPath});
+
+  final String imageAssetPath;
 
   @override
   Widget build(BuildContext context) {
@@ -420,16 +422,17 @@ class _MiniCourtGuide extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            const CustomPaint(painter: _GuideCourtPainter()),
-            Positioned(
-              left: AppSizes.w(context, 28),
-              bottom: AppSizes.h(context, 18),
-              child: const _CameraPlacementMarker(),
-            ),
-            Positioned(
-              right: AppSizes.w(context, 28),
-              bottom: AppSizes.h(context, 18),
-              child: const _CameraPlacementMarker(mirrored: true),
+            const _GuideGradientBackground(),
+            Padding(
+              padding: EdgeInsets.all(AppSizes.w(context, 14)),
+              child: Image.asset(
+                imageAssetPath,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+                errorBuilder: (context, error, stackTrace) {
+                  return const SizedBox.shrink();
+                },
+              ),
             ),
           ],
         ),
@@ -438,48 +441,27 @@ class _MiniCourtGuide extends StatelessWidget {
   }
 }
 
-class _CameraPlacementMarker extends StatelessWidget {
-  const _CameraPlacementMarker({this.mirrored = false});
-
-  final bool mirrored;
+class _GuideGradientBackground extends StatelessWidget {
+  const _GuideGradientBackground();
 
   @override
   Widget build(BuildContext context) {
-    final Widget marker = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        
-        SizedBox(height: AppSizes.h(context, 2)),
-        Container(
-          width: AppSizes.w(context, 24),
-          height: AppSizes.h(context, 36),
-          decoration: BoxDecoration(
-            color: const Color(0xFF111111).withOpacity(0.82),
-            borderRadius: BorderRadius.circular(AppSizes.w(context, 6)),
-            border: Border.all(color: Colors.white.withOpacity(0.34)),
-          ),
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: Container(
-              width: AppSizes.w(context, 7),
-              height: AppSizes.h(context, 2),
-              margin: EdgeInsets.only(top: AppSizes.h(context, 4)),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.72),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-          ),
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF95A7B4),
+            Color(0xFFB7B1CC),
+            Color(0xFF8FA36F),
+          ],
         ),
-      ],
-    );
-
-    return Transform.rotate(
-      angle: mirrored ? 0.08 : -0.08,
-      child: marker,
+      ),
     );
   }
 }
+
 
 
 //마커 다운 버튼
@@ -561,167 +543,49 @@ class _GlassCheckButton extends StatelessWidget {
   }
 }
 
-// 코트 페인터
-class _GuideCourtPainter extends CustomPainter {
-  const _GuideCourtPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Rect rect = Offset.zero & size;
-    final Paint background = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF95A7B4),
-          Color(0xFFB7B1CC),
-          Color(0xFF8FA36F),
-        ],
-      ).createShader(rect);
-    canvas.drawRect(rect, background);
-
-    final Paint lowerRunoff = Paint()
-      ..color = const Color(0xFFFF8B8B).withOpacity(0.24);
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height * 0.58, size.width, size.height * 0.42),
-      lowerRunoff,
-    );
-
-    final Rect apron = Rect.fromLTWH(
-      size.width * 0.12,
-      size.height * 0.18,
-      size.width * 0.76,
-      size.height * 0.58,
-    );
-    final Paint apronPaint = Paint()
-      ..color = const Color(0xFFA7D6A5).withOpacity(0.64);
-    canvas.drawRect(apron, apronPaint);
-
-    final Rect court = Rect.fromLTWH(
-      size.width * 0.22,
-      size.height * 0.18,
-      size.width * 0.56,
-      size.height * 0.42,
-    );
-    final Paint courtPaint = Paint()
-      ..color = const Color(0xFFC97979).withOpacity(0.72);
-    canvas.drawRect(court, courtPaint);
-
-    final Paint linePaint = Paint()
-      ..color = Colors.white.withOpacity(0.92)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.square;
-
-    canvas.drawRect(court, linePaint);
-
-    final double leftSingleLine = court.left + court.width * 0.13;
-    final double rightSingleLine = court.right - court.width * 0.13;
-    final double netY = court.top + court.height * 0.58;
-    final double serviceCenterX = court.center.dx;
-
-    canvas.drawLine(
-      Offset(leftSingleLine, court.top),
-      Offset(leftSingleLine, court.bottom),
-      linePaint,
-    );
-    canvas.drawLine(
-      Offset(rightSingleLine, court.top),
-      Offset(rightSingleLine, court.bottom),
-      linePaint,
-    );
-    canvas.drawLine(
-      Offset(court.left, netY),
-      Offset(court.right, netY),
-      linePaint,
-    );
-    canvas.drawLine(
-      Offset(serviceCenterX, court.top),
-      Offset(serviceCenterX, netY),
-      linePaint,
-    );
-
-    final Paint centerShadow = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Colors.white.withOpacity(0.00),
-          Colors.white.withOpacity(0.32),
-          Colors.white.withOpacity(0.00),
-        ],
-      ).createShader(Rect.fromLTWH(
-        size.width * 0.48,
-        size.height * 0.60,
-        size.width * 0.04,
-        size.height * 0.34,
-      ));
-    canvas.drawRect(
-      Rect.fromLTWH(
-        size.width * 0.48,
-        size.height * 0.60,
-        size.width * 0.04,
-        size.height * 0.34,
-      ),
-      centerShadow,
-    );
-
-    final Paint hazePaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Colors.white.withOpacity(0.20),
-          Colors.white.withOpacity(0.02),
-          Colors.black.withOpacity(0.06),
-        ],
-      ).createShader(rect);
-    canvas.drawRect(rect, hazePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-
-
-
 // 각 가이드 설명데이터
 class _GuideStepData {
   const _GuideStepData({
     required this.number,
     required this.title,
     required this.body,
+    required this.imageAssetPath,
   });
 
   final String number;
   final String title;
   final String body;
+  final String imageAssetPath;
 }
 const List<_GuideStepData> _guideSteps = [
   _GuideStepData(
     number: '01',
     title: '스마트폰 배치',
     body: '아래 그림처럼 배치해주세요. 반쪽 코트의 절반이 화면에 들어오면 판정이 정확해집니다.',
+    imageAssetPath: 'assets/images/howto_step_01.png',
   ),
   _GuideStepData(
     number: '02',
     title: '카메라 높이 조절',
     body: '160cm~180cm 정도의 높이에 배치하는 것을 권장드립니다.',
+    imageAssetPath: 'assets/images/howto_step_02.png',
   ),
   _GuideStepData(
     number: '03',
     title: '마커 준비',
     body: '마커를 다운받고 인쇄해주세요. 마커를 사용하면 판정이 더 정확해집니다.',
+    imageAssetPath: 'assets/images/howto_step_03.png',
   ),
   _GuideStepData(
     number: '04',
     title: '마커 부착',
-    body: '마커를 아래 사진과같이 라인에 붙어주세요. 꼭짓점을 맞춰주는게 중요합니다.',
+    body: '마커를 아래 사진과같이 판정할 라인에 붙어주세요. 꼭짓점을 맞춰주는게 중요합니다.',
+    imageAssetPath: 'assets/images/howto_step_04.png',
   ),
   _GuideStepData(
     number: '05',
     title: '최종 카메라 조정',
-    body: '마커가 화면에 잘 보이는지,확인해주세요',
+    body: '사진의 검은 영역이 다 보이는지 확인해주세요',
+    imageAssetPath: 'assets/images/howto_step_05.png',
   ),
 ];

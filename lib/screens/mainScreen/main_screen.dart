@@ -82,6 +82,7 @@ class _MainScreenState extends State<MainScreen>
     Navigator.pushNamed(context, AppRoutes.savedVideos);
   }
 
+
   void _onMarkerDownload() {
     _closeMenu();
     MarkerDownload.run(context);
@@ -280,6 +281,8 @@ class _MainWatermarkBackground extends StatelessWidget {
     );
   }
 }
+
+
 
 class _RecentVideoPreview {
   const _RecentVideoPreview({

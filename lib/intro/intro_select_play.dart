@@ -81,15 +81,15 @@ class _IntroSelectPlayScreenState extends State<IntroSelectPlayScreen>
                       '경기 방식을\n선택해주세요',
                       style: TextStyle(
                         color: AppColors.mainTextDark,
-                        fontSize: AppSizes.sp(context, 30),
+                        fontSize: AppSizes.sp(context, 28),
                         fontWeight: FontWeight.w700,
                         height: 1.1,
-                        letterSpacing: -1,
+                    
                       ),
                     ),
                     SizedBox(height: AppSizes.h(context, 12)),
                     Text(
-                      '단식/복식에 따라 판정해야 하는 라인이 달라집니다.',
+                      '단식/복식에 따라 판정해야 하는 라인이 달라집니다 :)',
                       style: TextStyle(
                         color: AppColors.mutedTextDark,
                         fontSize: AppSizes.sp(context, 15),
@@ -186,8 +186,8 @@ class _MatchTypeCard extends StatelessWidget {
         : Colors.white.withOpacity(0.95);
     final Color iconBackground = selected
         ? AppColors.accentGreen.withOpacity(0.12)
-        : AppColors.lightBlue;
-    final Color iconColor = selected ? AppColors.accentGreen : AppColors.vividBlue;
+        : Colors.grey.withOpacity(0.14);
+    final Color iconColor = selected ? AppColors.accentGreen : Colors.grey.shade600;
 
     return GestureDetector(
       onTap: onTap,
@@ -237,7 +237,7 @@ class _MatchTypeCard extends StatelessWidget {
                         style: TextStyle(
                           color: AppColors.mainTextDark,
                           fontSize: AppSizes.sp(context, 23),
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                       SizedBox(width: AppSizes.w(context, 9)),
@@ -265,15 +265,7 @@ class _MatchTypeCard extends StatelessWidget {
                 ],
               ),
             ),
-            AnimatedOpacity(
-              opacity: selected ? 1 : 0,
-              duration: const Duration(milliseconds: 160),
-              child: Icon(
-                Icons.check_circle_rounded,
-                color: AppColors.accentGreen,
-                size: AppSizes.sp(context, 26),
-              ),
-            ),
+            
           ],
         ),
       ),
