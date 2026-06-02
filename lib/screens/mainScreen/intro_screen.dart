@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/compo/app_button.dart';
+import '../../compo/app_button.dart';
 import '../../compo/app_sizes.dart';
 import '../../compo/app_text_styles.dart';
 import '../../routes.dart';

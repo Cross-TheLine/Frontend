@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/vidScreen/video_take_finish_dialog.dart';
+import 'video_take_finish_dialog.dart';
 
 import '../../compo/app_button.dart';
 import '../../compo/app_colors.dart';
