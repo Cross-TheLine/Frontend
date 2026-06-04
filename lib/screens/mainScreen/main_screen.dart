@@ -129,6 +129,8 @@ class _MainScreenState extends State<MainScreen>
                     left: AppSizes.w(context, 20),
                     child: _MainMenuButton(onPressed: _toggleMenu),
                   ),
+                  
+                  
                   // 최근 영상 프리뷰
                   Positioned(
                     top: previewTop, 
@@ -282,8 +284,6 @@ class _MainWatermarkBackground extends StatelessWidget {
   }
 }
 
-
-
 class _RecentVideoPreview {
   const _RecentVideoPreview({
     required this.id,
@@ -305,7 +305,10 @@ class _VideoPreviewStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<_RecentVideoPreview> visibleVideos =
         videos.take(4).toList(growable: false);
-    final bool hasVideos = visibleVideos.isNotEmpty;
+
+    if (visibleVideos.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return SizedBox(
       height: AppSizes.h(context, 222),
@@ -316,13 +319,9 @@ class _VideoPreviewStrip extends StatelessWidget {
           left: AppSizes.w(context, 0),
           right: AppSizes.w(context, 28),
         ),
-        itemCount: hasVideos ? visibleVideos.length : 2,
+        itemCount: visibleVideos.length,
         separatorBuilder: (_, __) => SizedBox(width: AppSizes.w(context, 22)),
         itemBuilder: (context, index) {
-          if (!hasVideos) {
-            return const _VideoPreviewEmptyCard();
-          }
-
           return _VideoPreviewCard(video: visibleVideos[index]);
         },
       ),
@@ -433,52 +432,6 @@ class _VideoThumbnailFallback extends StatelessWidget {
           Icons.videocam_outlined,
           color: AppColors.mainTextDark,
           size: AppSizes.sp(context, 34),
-        ),
-      ),
-    );
-  }
-}
-
-// 영상 없을때 카드
-class _VideoPreviewEmptyCard extends StatelessWidget {
-  const _VideoPreviewEmptyCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: AppSizes.w(context, 300),
-      height: AppSizes.h(context, 200),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.46),
-        borderRadius: BorderRadius.circular(AppSizes.w(context, 14)),
-        border: Border.all(color: Colors.white.withOpacity(0.72)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.videocam_outlined,
-              color: AppColors.mainTextDark.withOpacity(0.36),
-              size: AppSizes.sp(context, 32),
-            ),
-            SizedBox(height: AppSizes.h(context, 8)),
-            Text(
-              '영상을 찍어보세요!',
-              style: TextStyle(
-                color: AppColors.mainTextDark.withOpacity(0.46),
-                fontSize: AppSizes.sp(context, 12),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
         ),
       ),
     );

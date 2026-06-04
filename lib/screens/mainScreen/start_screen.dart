@@ -61,6 +61,7 @@ class _StartScreenState extends State<StartScreen>
                 clipBehavior: Clip.none,
                 children: [
                   const Positioned.fill(child: _StartWatermarkBackground()),
+                  
                   Positioned(
                     left: horizontalPadding,
                     right: horizontalPadding,
@@ -102,7 +103,7 @@ class _StartWatermarkBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<String> lines = List.generate(
-      7,
+      5,
       (_) => 'DO NOT CROSS THE LINE',
     );
 

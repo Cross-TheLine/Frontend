@@ -20,8 +20,7 @@ class IntroGuid2Screen extends StatefulWidget {
 class _IntroGuid2ScreenState extends State<IntroGuid2Screen>
     with ScreenOrientationMixin<IntroGuid2Screen> {
   @override
-  AppScreenOrientation get screenOrientation =>
-      AppScreenOrientation.guide;
+  AppScreenOrientation get screenOrientation => AppScreenOrientation.portrait;
 
   bool _didNavigate = false;
   bool _isLandscapeDetected = false;
@@ -63,7 +62,10 @@ class _IntroGuid2ScreenState extends State<IntroGuid2Screen>
   void _goNext() {
     if (_didNavigate || !mounted) return;
     _didNavigate = true;
-    Navigator.pushReplacementNamed(context, AppRoutes.videoTake);
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.cameraOrientationHandoff,
+    );
   }
 
   @override

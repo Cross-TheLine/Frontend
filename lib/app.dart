@@ -3,16 +3,14 @@ import 'package:flutter/material.dart';
 import 'compo/app_colors.dart';
 import 'screens/intro/intro_guid1.dart';
 import 'screens/intro/intro_guid2.dart';
+import 'screens/intro/camera_orientation_handoff.dart';
 import 'screens/intro/intro_guid0.dart';
 import 'routes.dart';
 import 'screens/mainScreen/how_to_use_screen.dart';
 import 'screens/mainScreen/main_screen.dart';
 import 'screens/mainScreen/saved_videos_screen.dart';
 import 'screens/mainScreen/start_screen.dart';
-import 'screens/resultScreen/loading_result_screen.dart';
 import 'screens/resultScreen/result_screen.dart';
-import 'screens/resultScreen/result_skip_screen.dart';
-import 'screens/vidScreen/video_pick_screen.dart';
 import 'screens/vidScreen/video_take_screen.dart';
 import 'services/screen_orientation.dart';
 
@@ -92,6 +90,14 @@ class CrossTheLine extends StatelessWidget {
           settings: settings,
         );
 
+      case AppRoutes.cameraOrientationHandoff:
+        return PageRouteBuilder(
+          settings: settings,
+          pageBuilder: (_, __, ___) => const CameraOrientationHandoffScreen(),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        );
+
       case AppRoutes.savedVideos:
         return MaterialPageRoute(
           builder: (_) => const SavedVideosScreen(),
@@ -99,32 +105,11 @@ class CrossTheLine extends StatelessWidget {
         );
 
       case AppRoutes.videoTake:
-        return MaterialPageRoute(
-          builder: (_) => const VideoTakeScreen(),
+        return PageRouteBuilder(
           settings: settings,
-        );
-
-      case AppRoutes.videoPick:
-        return MaterialPageRoute(
-          builder: (_) => const VideoPickScreen(),
-          settings: settings,
-        );
-
-      case AppRoutes.loadingResult:
-        final LoadingResultArgs? args = settings.arguments is LoadingResultArgs
-            ? settings.arguments as LoadingResultArgs
-            : null;
-        return MaterialPageRoute(
-          builder: (_) => LoadingResultScreen(
-            selectedIndex: args?.selectedIndex ?? 0,
-          ),
-          settings: settings,
-        );
-
-      case AppRoutes.resultSkip:
-        return MaterialPageRoute(
-          builder: (_) => const ResultSkipScreen(),
-          settings: settings,
+          pageBuilder: (_, __, ___) => const VideoTakeScreen(),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
         );
 
       case AppRoutes.result:
@@ -132,7 +117,10 @@ class CrossTheLine extends StatelessWidget {
             ? settings.arguments as ResultScreenArgs
             : null;
         return MaterialPageRoute(
-          builder: (_) => ResultScreen(isIn: args?.isIn ?? true),
+          builder: (_) => ResultScreen(
+            isIn: args?.isIn ?? true,
+            videoPath: args?.videoPath,
+          ),
           settings: settings,
         );
 
