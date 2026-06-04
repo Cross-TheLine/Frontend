@@ -26,9 +26,10 @@ Future<void> waitForAppliedOrientation(
   if (orientation == AppScreenOrientation.guide) {
     return;
   }
-
+  // 실제 레이아웃이 한 프레임 늦게 따라오는 경우가 있음 ->  endOfFrame까지 대기
   if (!_isContextMounted(context) ||
       _isUiOrientationMatched(context, orientation)) {
+    await WidgetsBinding.instance.endOfFrame;
     return;
   }
 
@@ -55,6 +56,8 @@ Future<void> waitForAppliedOrientation(
   } finally {
     WidgetsBinding.instance.removeObserver(observer);
   }
+  // 대기 
+  await WidgetsBinding.instance.endOfFrame;
 }
 
 List<DeviceOrientation> _preferredOrientationsFor(

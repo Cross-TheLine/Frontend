@@ -129,6 +129,8 @@ class _MainScreenState extends State<MainScreen>
                     left: AppSizes.w(context, 20),
                     child: _MainMenuButton(onPressed: _toggleMenu),
                   ),
+                  
+                  
                   // 최근 영상 프리뷰
                   Positioned(
                     top: previewTop, 
@@ -281,8 +283,6 @@ class _MainWatermarkBackground extends StatelessWidget {
     );
   }
 }
-
-
 
 class _RecentVideoPreview {
   const _RecentVideoPreview({
