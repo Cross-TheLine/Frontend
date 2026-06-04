@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
+
 import '../../compo/app_colors.dart';
 import '../../routes.dart';
 import '../../services/api_service.dart';
@@ -27,7 +29,6 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
   final ApiService _apiService = ApiService();
 
   _VideoSetupPhase _phase = _VideoSetupPhase.initializing;
-  LineDetectionResult? _lineDetectionResult;
   Timer? _successPopupTimer;
 
   bool _isInitialized = false;
@@ -38,12 +39,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
   @override
   void initState() {
     super.initState();
-
-    // 카메라 초기화는 첫 프레임 이후에 시작해서 View/MediaQuery 크기가 안정된 뒤 preview 만들기
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _initializeCamera();
-    });
+    _initializeCamera();
   }
 
   Future<void> _initializeCamera() async {
@@ -80,11 +76,12 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
     setState(() {
       _phase = _VideoSetupPhase.detecting;
       _errorMessage = null;
-      _lineDetectionResult = null;
       _showSuccessPopup = false;
     });
 
     try {
+      // 사용자가 확인을 누른 뒤 프레임 1장만 캡처해서 백엔드게 전송
+      // 백엔드가 detected=true를 반환하면 준비 완료로 판단하고 이후 녹화 시작
       final XFile frame = await _cameraService.captureFrame();
       final LineDetectionResult result = await _apiService.requestLineDetection(
         imagePath: frame.path,
@@ -92,7 +89,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
 
       if (!mounted) return;
 
-      if (!result.detected || !result.hasOverlay) {
+      if (!result.detected) {
         setState(() {
           _phase = _VideoSetupPhase.failed;
           _errorMessage = result.message.isEmpty
@@ -103,7 +100,6 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
       }
 
       setState(() {
-        _lineDetectionResult = result;
         _phase = _VideoSetupPhase.ready;
         _showSuccessPopup = true;
       });
@@ -148,8 +144,8 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
   Future<void> _onJudgeButtonPressed() async {
     if (_phase != _VideoSetupPhase.ready || !_isRecording) return;
 
-    // 백엔드 판정 : 사용자가 버튼을 누른 시점 기준으로 처리
-    // 이 타임스탬프 같이 넘기기
+    // 백엔드 판정은 사용자가 버튼을 누른 시점 기준으로 처리
+    // 타임스탬프 같이 넘기기
     final DateTime pressedAt = DateTime.now();
 
     setState(() {
@@ -160,7 +156,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
 
     try {
       // 판정 요청 전 현재 녹화 파일을 확정
-      // 이후에는 loading_result_screen을 거치지 않고 이 화면의 popup 위에서 바로 결과 API 대기
+      // 이후 ->  loading_result_screen을 안거치고 이 화면의 glass popup 위에서 바로 결과 Api 대기
       final String videoPath = await _cameraService.stopRecording();
 
       if (!mounted) return;
@@ -187,7 +183,6 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
     } catch (error) {
       if (!mounted) return;
 
-      // 판정 요청에 실패 :  기존 녹화는 이미 멈춘 상태
       // 사용자가 다시 마커/라인 인식부터 시작하도록 failed 상태로 되돌리기
       setState(() {
         _phase = _VideoSetupPhase.failed;
@@ -239,6 +234,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
   @override
   Widget build(BuildContext context) {
     final double scale = _landscapeScale(context);
+    final EdgeInsets safePadding = MediaQuery.paddingOf(context);
     final bool isJudgeEnabled = _phase == _VideoSetupPhase.ready && _isRecording;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -249,30 +245,24 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
       ),
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: SafeArea(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
+        extendBody: true,
+        extendBodyBehindAppBar: true,
+        resizeToAvoidBottomInset: false,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
               _CameraPreviewLayer(
                 isInitialized: _isInitialized,
                 controller: _cameraService.controller,
               ),
-              if (_lineDetectionResult?.hasOverlay == true)
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _DetectedLineOverlayPainter(
-                      result: _lineDetectionResult!,
-                    ),
-                  ),
-                ),
               _CameraDimOverlay(phase: _phase),
 
 
-              // 판정 버튼
+
               Positioned(
-                right: 26 * scale,
-                top: 0,
-                bottom: 0,
+                right: math.max(26 * scale, safePadding.right + 18 * scale),
+                top: safePadding.top,
+                bottom: safePadding.bottom,
                 child: Center(
                   child: _JudgeButton(
                     scale: scale,
@@ -282,14 +272,15 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
                 ),
               ),
               Positioned(
-                left: 10 * scale,
-                top: 8 * scale,
+                left: safePadding.left + 10 * scale,
+                top: safePadding.top + 8 * scale,
                 child: _RoundIconButton(
                   scale: scale,
                   icon: Icons.arrow_back_ios_new_rounded,
                   onPressed: _goBack,
                 ),
               ),
+
               if (_phase == _VideoSetupPhase.initializing)
                 _CenteredGlassPopup(
                   scale: scale,
@@ -298,6 +289,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
                   message: '잠시만 기다려주세요.',
                   showProgress: true,
                 ),
+
               if (_phase == _VideoSetupPhase.intro)
                 _CenteredGlassPopup(
                   scale: scale,
@@ -307,6 +299,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
                   actionText: '확인',
                   onAction: _startLineDetection,
                 ),
+
               if (_phase == _VideoSetupPhase.detecting)
                 _CenteredGlassPopup(
                   scale: scale,
@@ -315,6 +308,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
                   message: '카메라를 움직이지 말고\n마커와 라인이 화면 안에 보이게 해주세요.',
                   showProgress: true,
                 ),
+
               if (_showSuccessPopup)
                 _CenteredGlassPopup(
                   scale: scale,
@@ -353,8 +347,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
                     message: _errorMessage!,
                   ),
                 ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -390,7 +383,8 @@ class _CameraPreviewLayer extends StatelessWidget {
   Widget build(BuildContext context) {
     final CameraController? cameraController = controller;
 
-    if (!isInitialized || cameraController == null ||
+    if (!isInitialized ||
+        cameraController == null ||
         !cameraController.value.isInitialized) {
       return Container(
         color: const Color(0xFF121212),
@@ -402,18 +396,32 @@ class _CameraPreviewLayer extends StatelessWidget {
 
     final Size? previewSize = cameraController.value.previewSize;
     if (previewSize == null) {
-      return CameraPreview(cameraController);
+      return ColoredBox(
+        color: Colors.black,
+        child: Center(child: CameraPreview(cameraController)),
+      );
     }
 
-    return SizedBox.expand(
-      child: FittedBox(
-        fit: BoxFit.cover,
-        child: SizedBox(
-          width: previewSize.height,
-          height: previewSize.width,
-          child: CameraPreview(cameraController),
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double viewAspect = constraints.maxWidth / constraints.maxHeight;
+        double previewAspect = previewSize.width / previewSize.height;
+        if (viewAspect > 1 && previewAspect < 1) {
+          previewAspect = 1 / previewAspect;
+        } else if (viewAspect < 1 && previewAspect > 1) {
+          previewAspect = 1 / previewAspect;
+        }
+
+        return ColoredBox(
+          color: Colors.black,
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: previewAspect,
+              child: CameraPreview(cameraController),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -434,7 +442,7 @@ class _CameraDimOverlay extends StatelessWidget {
 
     return IgnorePointer(
       child: ColoredBox(
-        color: Colors.black.withOpacity(0.10),
+        color: Colors.black.withOpacity(0.18),
       ),
     );
   }
@@ -698,70 +706,5 @@ class _SmallGlassMessage extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _DetectedLineOverlayPainter extends CustomPainter {
-  const _DetectedLineOverlayPainter({required this.result});
-
-  final LineDetectionResult result;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final NormalizedLineSegment? redLine = result.redLine;
-    final NormalizedLineSegment? blueLine = result.blueLine;
-
-    if (redLine == null || blueLine == null) return;
-
-    _drawSegment(
-      canvas,
-      size,
-      redLine,
-      const Color(0xFFFF2E2E),
-    );
-    _drawSegment(
-      canvas,
-      size,
-      blueLine,
-      const Color(0xFF4EC7FF),
-    );
-  }
-
-  void _drawSegment(
-    Canvas canvas,
-    Size size,
-    NormalizedLineSegment segment,
-    Color color,
-  ) {
-    final Offset start = Offset(segment.startX * size.width, segment.startY * size.height);
-    final Offset end = Offset(segment.endX * size.width, segment.endY * size.height);
-    final double stroke = math.max(3.2, size.shortestSide * 0.012);
-
-    final Paint shadow = Paint()
-      ..color = Colors.black.withOpacity(0.38)
-      ..strokeWidth = stroke + 3
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(start, end, shadow);
-
-    final Paint line = Paint()
-      ..color = color
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(start, end, line);
-
-    final Paint highlight = Paint()
-      ..color = Colors.white.withOpacity(0.75)
-      ..strokeWidth = math.max(1.1, stroke * 0.28)
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(start, end, highlight);
-
-    final Paint point = Paint()..color = Colors.white.withOpacity(0.92);
-    canvas.drawCircle(start, stroke * 0.75, point);
-    canvas.drawCircle(end, stroke * 0.75, point);
-  }
-
-  @override
-  bool shouldRepaint(covariant _DetectedLineOverlayPainter oldDelegate) {
-    return oldDelegate.result != result;
   }
 }
