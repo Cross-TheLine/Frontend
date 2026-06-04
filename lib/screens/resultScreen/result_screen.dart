@@ -40,7 +40,6 @@ class _ResultScreenState extends State<ResultScreen>
       _isMovingToMain = false;
     });
 
-    // 결과 확인 후 경기를 이어가면 안내 화면을 다시 타지 않고 촬영/라인 판정 화면으로 복귀
     Navigator.pushReplacementNamed(context, AppRoutes.videoTake);
   }
 
@@ -94,69 +93,49 @@ class _ResultScreenState extends State<ResultScreen>
       child: Scaffold(
         backgroundColor: backgroundColor,
         body: SafeArea(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              const Positioned.fill(child: _ResultSoftLight()),
-              Center(
-                child: Column(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(height: 25 * scale),
+                Text(
+                  resultText,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 78 * scale,
+                    fontWeight: FontWeight.w800,
+                    height: 1,
+                    letterSpacing: -1.2,
+                  ),
+                ),
+                SizedBox(height: 40 * scale),
+                Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      resultText,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 78 * scale,
-                        fontWeight: FontWeight.w900,
-                        height: 1,
-                        letterSpacing: -1.2,
-                      ),
+                    _ResultIconAction(
+                      scale: scale*0.6,
+                      icon: Icons.save_alt_rounded,
+   
+                      onPressed: _isMoving ? null : _saveVideoForLater,
                     ),
-                    SizedBox(height: 16 * scale),
-                    Text(
-                      '경기를 계속 플레이할까요?',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.88),
-                        fontSize: 17 * scale,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    SizedBox(height: 34 * scale),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _ResultActionButton(
-                          scale: scale,
-                          label: '계속 플레이',
-                          backgroundColor: Colors.white.withOpacity(0.78),
-                          textColor: AppColors.mainTextDark,
-                          onPressed: _isMoving ? null : _continuePlay,
-                        ),
-                        SizedBox(width: 14 * scale),
-                        _ResultActionButton(
-                          scale: scale,
-                          label: '영상 저장하기',
-                          backgroundColor: Colors.white.withOpacity(0.58),
-                          textColor: AppColors.mainTextDark,
-                          onPressed: _isMoving ? null : _saveVideoForLater,
-                        ),
-                        SizedBox(width: 14 * scale),
-                        _ResultActionButton(
-                          scale: scale,
-                          label: '메인으로',
-                          backgroundColor: Colors.black.withOpacity(0.24),
-                          borderColor: Colors.white.withOpacity(0.32),
-                          textColor: Colors.white,
-                          onPressed: _isMoving ? null : _goToMain,
-                        ),
-                      ],
+                    SizedBox(width: 28 * scale),
+                    _ResultIconAction(
+                      scale: scale*0.6,
+                      icon: Icons.home_rounded,
+                      onPressed: _isMoving ? null : _goToMain,
                     ),
                   ],
                 ),
-              ),
-            ],
+                SizedBox(height: 15 * scale),
+                _ResultPrimaryButton(
+                  scale: scale,
+                  label: '계속 플레이',
+                  onPressed: _isMoving ? null : _continuePlay,
+                ),
+                SizedBox(height: 18 * scale),
+              ],
+            ),
           ),
         ),
       ),
@@ -164,32 +143,26 @@ class _ResultScreenState extends State<ResultScreen>
   }
 }
 
-class _ResultActionButton extends StatelessWidget {
-  const _ResultActionButton({
+class _ResultPrimaryButton extends StatelessWidget {
+  const _ResultPrimaryButton({
     required this.scale,
     required this.label,
-    required this.backgroundColor,
-    required this.textColor,
     required this.onPressed,
-    this.borderColor,
   });
 
   final double scale;
   final String label;
-  final Color backgroundColor;
-  final Color textColor;
   final VoidCallback? onPressed;
-  final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {
     return GlassButton(
-      width: 132 * scale,
-      height: 48 * scale,
+      width: 160 * scale,
+      height: 50 * scale,
       borderRadius: 999,
       blur: 22,
-      backgroundColor: backgroundColor,
-      borderColor: borderColor ?? Colors.white.withOpacity(0.62),
+      backgroundColor: Colors.white.withOpacity(0.78),
+      borderColor: Colors.white.withOpacity(0.62),
       shadowColor: Colors.black.withOpacity(0.12),
       shadowBlurRadius: 26 * scale,
       shadowOffset: Offset(0, 12 * scale),
@@ -197,8 +170,8 @@ class _ResultActionButton extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: textColor,
-          fontSize: 13.5 * scale,
+          color: AppColors.mainTextDark,
+          fontSize: 14 * scale,
           fontWeight: FontWeight.w900,
           letterSpacing: -0.2,
         ),
@@ -207,25 +180,40 @@ class _ResultActionButton extends StatelessWidget {
   }
 }
 
-class _ResultSoftLight extends StatelessWidget {
-  const _ResultSoftLight();
+class _ResultIconAction extends StatelessWidget {
+  const _ResultIconAction({
+    required this.scale,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final double scale;
+  final IconData icon;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: const Alignment(0.0, -0.22),
-            radius: 0.82,
-            colors: [
-              Colors.white.withOpacity(0.18),
-              Colors.white.withOpacity(0.03),
-              Colors.black.withOpacity(0.06),
-            ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GlassButton(
+          width: 46 * scale,
+          height: 46 * scale,
+          borderRadius: 999,
+          blur: 22,
+          backgroundColor: Colors.white.withOpacity(0.0),
+          borderColor: Colors.white.withOpacity(0.46),
+          shadowColor: Colors.black.withOpacity(0.10),
+          shadowBlurRadius: 22 * scale,
+          shadowOffset: Offset(0, 10 * scale),
+          onPressed: onPressed,
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 22 * scale,
           ),
         ),
-      ),
+      ],
     );
   }
 }

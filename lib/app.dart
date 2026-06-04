@@ -11,7 +11,6 @@ import 'screens/mainScreen/main_screen.dart';
 import 'screens/mainScreen/saved_videos_screen.dart';
 import 'screens/mainScreen/start_screen.dart';
 import 'screens/resultScreen/result_screen.dart';
-import 'screens/resultScreen/result_skip_screen.dart';
 import 'screens/vidScreen/video_take_screen.dart';
 import 'services/screen_orientation.dart';
 
@@ -111,12 +110,6 @@ class CrossTheLine extends StatelessWidget {
           pageBuilder: (_, __, ___) => const VideoTakeScreen(),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
-        );
-
-      case AppRoutes.resultSkip:
-        return MaterialPageRoute(
-          builder: (_) => const ResultSkipScreen(),
-          settings: settings,
         );
 
       case AppRoutes.result:
