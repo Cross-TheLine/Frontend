@@ -5,11 +5,9 @@ import 'package:flutter/services.dart';
 
 import '../../compo/app_colors.dart';
 import '../../compo/app_sizes.dart';
+import '../../compo/saved_video_preview.dart';
+import '../../services/saved_video_storage_service.dart';
 import '../../services/screen_orientation.dart';
-
-
-
-
 
 class SavedVideosScreen extends StatefulWidget {
   const SavedVideosScreen({super.key});
@@ -24,38 +22,39 @@ class _SavedVideosScreenState extends State<SavedVideosScreen>
   AppScreenOrientation get screenOrientation => AppScreenOrientation.portrait;
 
   final ScrollController _scrollController = ScrollController();
+  final SavedVideoStorageService _savedVideoStorageService = SavedVideoStorageService();
 
   late final DateTime _today;
   late DateTime _selectedDate;
   late DateTime _visibleMonth;
-  late final List<_SavedVideoData> _sampleVideos;
+  List<_SavedVideoData> _savedVideos = const <_SavedVideoData>[];
 
   @override
   void initState() {
     super.initState();
-
     _today = _dateOnly(DateTime.now());
     _selectedDate = _today;
     _visibleMonth = DateTime(_today.year, _today.month, 1);
+    _loadSavedVideos();
+  }
 
-    // TODO: 백엔드 연동 후 이 리스트를 API 응답으로 교체하세요.
-    // 현재는 오늘 날짜에 예시 영상 1개가 있다고 가정합니다.
-    _sampleVideos = <_SavedVideoData>[
-      _SavedVideoData(
-        id: 'sample-video-01',
-        recordedAt: DateTime(
-          _today.year,
-          _today.month,
-          _today.day,
-          20,
-          43,
-        ),
-        result: 'OUT',
-        thumbnailUrl: null,
-        thumbnailAssetPath: null,
-        videoUrl: null,
-      ),
-    ];
+  Future<void> _loadSavedVideos() async {
+    final List<SavedVideoRecord> videos = await _savedVideoStorageService.loadVideos();
+    if (!mounted) return;
+
+    setState(() {
+      _savedVideos = videos.map((SavedVideoRecord video) {
+        return _SavedVideoData(
+          id: video.id,
+          recordedAt: video.recordedAt,
+          result: video.result,
+          thumbnailUrl: video.thumbnailUrl,
+          thumbnailAssetPath: video.thumbnailAssetPath,
+          videoPath: video.videoPath,
+          videoUrl: video.videoUrl,
+        );
+      }).toList(growable: false);
+    });
   }
 
   @override
@@ -65,13 +64,13 @@ class _SavedVideosScreenState extends State<SavedVideosScreen>
   }
 
   List<_SavedVideoData> get _selectedDateVideos {
-    return _sampleVideos
+    return _savedVideos
         .where((video) => _isSameDate(video.recordedAt, _selectedDate))
         .toList(growable: false);
   }
 
   Set<String> get _videoDateKeys {
-    return _sampleVideos.map((video) => _dateKey(video.recordedAt)).toSet();
+    return _savedVideos.map((video) => _dateKey(video.recordedAt)).toSet();
   }
 
   void _goPreviousMonth() {
@@ -178,24 +177,21 @@ class _SavedVideosScreenState extends State<SavedVideosScreen>
   }
 }
 
-
 class _SavedVideosSoftBackground extends StatelessWidget {
   const _SavedVideosSoftBackground();
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.screenWhite,
-              Colors.white.withOpacity(0.96),
-              const Color(0xFFEAF7F0).withOpacity(0.42),
-            ],
-          ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.screenWhite,
+            const Color(0xFFF1F5F3).withOpacity(0.92),
+            AppColors.screenWhite,
+          ],
         ),
       ),
     );
@@ -216,8 +212,8 @@ class _SavedVideosWatermark extends StatelessWidget {
             'DO NOT CROSS\nTHE LINE',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: AppColors.softWatermark.withOpacity(0.32), // ← 더 연하게
-              fontSize: AppSizes.sp(context, 72), // ← 크게
+              color: AppColors.softWatermark.withOpacity(0.28),
+              fontSize: AppSizes.sp(context, 64),
               fontWeight: FontWeight.w900,
               fontStyle: FontStyle.italic,
               height: 0.95,
@@ -229,6 +225,7 @@ class _SavedVideosWatermark extends StatelessWidget {
     );
   }
 }
+
 class _CalendarCard extends StatelessWidget {
   const _CalendarCard({
     required this.visibleMonth,
@@ -248,192 +245,133 @@ class _CalendarCard extends StatelessWidget {
   final VoidCallback onNextMonth;
   final ValueChanged<DateTime> onDateSelected;
 
-  static const List<String> _weekdays = <String>[
-    '일',
-    '월',
-    '화',
-    '수',
-    '목',
-    '금',
-    '토',
-  ];
+  static const List<String> _weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
   @override
   Widget build(BuildContext context) {
-    final BorderRadius radius = BorderRadius.circular(AppSizes.w(context, 18));
+    final List<DateTime?> cells = _calendarCells(visibleMonth);
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSizes.w(context, 18)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(
+            AppSizes.w(context, 18),
+            AppSizes.h(context, 18),
+            AppSizes.w(context, 18),
+            AppSizes.h(context, 18),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: radius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: radius,
-              border: Border.all(color: Colors.white.withOpacity(0.72)),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.66),
-                  Colors.white.withOpacity(0.38),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.70),
+            borderRadius: BorderRadius.circular(AppSizes.w(context, 18)),
+            border: Border.all(color: Colors.white.withOpacity(0.82)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 28,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    '${visibleMonth.year}년 ${visibleMonth.month}월',
+                    style: TextStyle(
+                      color: AppColors.mainTextDark,
+                      fontSize: AppSizes.sp(context, 17),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  SizedBox(width: AppSizes.w(context, 3)),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.accentGreen,
+                    size: AppSizes.sp(context, 24),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: onPreviousMonth,
+                    icon: Icon(
+                      Icons.chevron_left_rounded,
+                      color: AppColors.accentGreen,
+                      size: AppSizes.sp(context, 25),
+                    ),
+                    style: IconButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size(AppSizes.w(context, 34), AppSizes.w(context, 34)),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                  SizedBox(width: AppSizes.w(context, 8)),
+                  IconButton(
+                    onPressed: onNextMonth,
+                    icon: Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.accentGreen,
+                      size: AppSizes.sp(context, 25),
+                    ),
+                    style: IconButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size(AppSizes.w(context, 34), AppSizes.w(context, 34)),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
                 ],
               ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppSizes.w(context, 16),
-                AppSizes.h(context, 16),
-                AppSizes.w(context, 16),
-                AppSizes.h(context, 16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+              SizedBox(height: AppSizes.h(context, 10)),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final double cellWidth = constraints.maxWidth / 7;
+                  return Column(
                     children: [
-                      Text(
-                        '${visibleMonth.year}년 ${visibleMonth.month}월',
-                        style: TextStyle(
-                          color: AppColors.mainTextDark,
-                          fontSize: AppSizes.sp(context, 16),
-                          fontWeight: FontWeight.w900,
-                        ),
+                      Row(
+                        children: _weekdays.map((day) {
+                          return SizedBox(
+                            width: cellWidth,
+                            height: AppSizes.h(context, 26),
+                            child: Center(
+                              child: Text(
+                                day,
+                                style: TextStyle(
+                                  color: const Color(0xFFC5C5C5),
+                                  fontSize: AppSizes.sp(context, 12),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
-                      SizedBox(width: AppSizes.w(context, 2)),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: AppColors.accentGreen,
-                        size: AppSizes.sp(context, 24),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: onPreviousMonth,
-                        icon: Icon(
-                          Icons.chevron_left_rounded,
-                          color: AppColors.accentGreen,
-                          size: AppSizes.sp(context, 25),
-                        ),
-                        style: IconButton.styleFrom(
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size(
-                            AppSizes.w(context, 34),
-                            AppSizes.w(context, 34),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: AppSizes.w(context, 10)),
-                      IconButton(
-                        onPressed: onNextMonth,
-                        icon: Icon(
-                          Icons.chevron_right_rounded,
-                          color: AppColors.accentGreen,
-                          size: AppSizes.sp(context, 25),
-                        ),
-                        style: IconButton.styleFrom(
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size(
-                            AppSizes.w(context, 34),
-                            AppSizes.w(context, 34),
-                          ),
-                        ),
+                      Wrap(
+                        children: cells.map((date) {
+                          return SizedBox(
+                            width: cellWidth,
+                            height: AppSizes.h(context, 46),
+                            child: Center(
+                              child: date == null
+                                  ? const SizedBox.shrink()
+                                  : _CalendarDay(
+                                      date: date,
+                                      selected: _isSameDate(date, selectedDate),
+                                      hasVideo: videoDateKeys.contains(_dateKey(date)),
+                                      isToday: _isSameDate(date, today),
+                                      onTap: () => onDateSelected(date),
+                                    ),
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ],
-                  ),
-                  SizedBox(height: AppSizes.h(context, 10)),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final double cellWidth = constraints.maxWidth / 7;
-                      final DateTime firstDay = DateTime(
-                        visibleMonth.year,
-                        visibleMonth.month,
-                        1,
-                      );
-                      final int leadingEmptyCellCount = firstDay.weekday % 7;
-                      final int daysInMonth = DateTime(
-                        visibleMonth.year,
-                        visibleMonth.month + 1,
-                        0,
-                      ).day;
-                      final int totalCellCount =
-                          ((leadingEmptyCellCount + daysInMonth) / 7).ceil() * 7;
-
-                      return Column(
-                        children: [
-                          Row(
-                            children: _weekdays.map((day) {
-                              return SizedBox(
-                                width: cellWidth,
-                                height: AppSizes.h(context, 26),
-                                child: Center(
-                                  child: Text(
-                                    day,
-                                    style: TextStyle(
-                                      color: const Color(0xFFC5C5C5),
-                                      fontSize: AppSizes.sp(context, 12),
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                          Wrap(
-                            children: List.generate(totalCellCount, (index) {
-                              final int day = index - leadingEmptyCellCount + 1;
-
-                              if (day < 1 || day > daysInMonth) {
-                                return SizedBox(
-                                  width: cellWidth,
-                                  height: AppSizes.h(context, 48),
-                                );
-                              }
-
-                              final DateTime date = DateTime(
-                                visibleMonth.year,
-                                visibleMonth.month,
-                                day,
-                              );
-                              final bool selected = _isSameDate(date, selectedDate);
-                              final bool isToday = _isSameDate(date, today);
-                              final bool hasVideo =
-                                  videoDateKeys.contains(_dateKey(date));
-
-                              return SizedBox(
-                                width: cellWidth,
-                                height: AppSizes.h(context, 48),
-                                child: Center(
-                                  child: _CalendarDay(
-                                    day: day,
-                                    selected: selected,
-                                    isToday: isToday,
-                                    hasVideo: hasVideo,
-                                    onTap: () => onDateSelected(date),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
+                  );
+                },
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -443,53 +381,47 @@ class _CalendarCard extends StatelessWidget {
 
 class _CalendarDay extends StatelessWidget {
   const _CalendarDay({
-    required this.day,
+    required this.date,
     required this.selected,
-    required this.isToday,
     required this.hasVideo,
+    required this.isToday,
     required this.onTap,
   });
 
-  final int day;
+  final DateTime date;
   final bool selected;
-  final bool isToday;
   final bool hasVideo;
+  final bool isToday;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final Color selectedBackground = hasVideo
-        ? AppColors.accentGreen.withOpacity(0.16)
-        : const Color(0xFFE9E9E9).withOpacity(0.92);
+        ? AppColors.accentGreen.withOpacity(0.18)
+        : const Color(0xFFE8E8E8);
     final Color textColor = hasVideo
         ? AppColors.accentGreen
         : selected
-            ? const Color(0xFF8A8A8A)
-            : AppColors.mainTextDark;
-    final Color? todayBorderColor = isToday && !selected
-        ? (hasVideo
-            ? AppColors.accentGreen.withOpacity(0.34)
-            : const Color(0xFFBDBDBD).withOpacity(0.48))
-        : null;
+            ? const Color(0xFF808080)
+            : isToday
+                ? AppColors.mainTextDark
+                : AppColors.mainTextDark;
 
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOut,
-        width: selected ? AppSizes.w(context, 40) : AppSizes.w(context, 36),
-        height: selected ? AppSizes.w(context, 40) : AppSizes.w(context, 36),
-        decoration: BoxDecoration(
-          color: selected ? selectedBackground : Colors.transparent,
-          shape: BoxShape.circle,
-          border: todayBorderColor == null
-              ? null
-              : Border.all(color: todayBorderColor),
-        ),
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: selected ? AppSizes.w(context, 40) : AppSizes.w(context, 38),
+        height: selected ? AppSizes.w(context, 40) : AppSizes.w(context, 38),
+        decoration: selected
+            ? BoxDecoration(
+                color: selectedBackground,
+                shape: BoxShape.circle,
+              )
+            : null,
         child: Center(
           child: Text(
-            '$day',
+            '${date.day}',
             style: TextStyle(
               color: textColor,
               fontSize: AppSizes.sp(context, 20),
@@ -512,7 +444,29 @@ class _SavedVideoItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SavedVideoThumbnail(video: video),
+        Container(
+          height: AppSizes.h(context, 176),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSizes.w(context, 9)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 9),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppSizes.w(context, 9)),
+            child: SavedVideoPreview(
+              videoUrl: video.videoUrl,
+              videoPath: video.videoPath,
+              thumbnailUrl: video.thumbnailUrl,
+              thumbnailAssetPath: video.thumbnailAssetPath,
+            ),
+          ),
+        ),
         SizedBox(height: AppSizes.h(context, 9)),
         Text(
           _formatKoreanDateTime(video.recordedAt),
@@ -537,124 +491,6 @@ class _SavedVideoItem extends StatelessWidget {
   }
 }
 
-class _SavedVideoThumbnail extends StatelessWidget {
-  const _SavedVideoThumbnail({required this.video});
-
-  final _SavedVideoData video;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: AppSizes.h(context, 176),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppSizes.w(context, 7)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 9),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSizes.w(context, 7)),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Positioned.fill(child: _ThumbnailImage(video: video)),
-            Container(
-              width: AppSizes.w(context, 62),
-              height: AppSizes.w(context, 62),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.58),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.play_arrow_rounded,
-                color: Colors.black,
-                size: AppSizes.sp(context, 43),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ThumbnailImage extends StatelessWidget {
-  const _ThumbnailImage({required this.video});
-
-  final _SavedVideoData video;
-
-  @override
-  Widget build(BuildContext context) {
-    final String? thumbnailUrl = video.thumbnailUrl;
-    final String? thumbnailAssetPath = video.thumbnailAssetPath;
-
-    if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
-      return Image.network(
-        thumbnailUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const _ExampleVideoPreview(),
-      );
-    }
-
-    if (thumbnailAssetPath != null && thumbnailAssetPath.isNotEmpty) {
-      return Image.asset(
-        thumbnailAssetPath,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const _ExampleVideoPreview(),
-      );
-    }
-
-    return const _ExampleVideoPreview();
-  }
-}
-
-class _ExampleVideoPreview extends StatelessWidget {
-  const _ExampleVideoPreview();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1F2933),
-            const Color(0xFF52616B).withOpacity(0.92),
-            const Color(0xFF2C7A5B).withOpacity(0.86),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.videocam_rounded,
-              color: Colors.white.withOpacity(0.86),
-              size: AppSizes.sp(context, 34),
-            ),
-            SizedBox(height: AppSizes.h(context, 8)),
-            Text(
-              '예시 영상',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.92),
-                fontSize: AppSizes.sp(context, 13),
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _SavedVideoData {
   const _SavedVideoData({
     required this.id,
@@ -662,6 +498,7 @@ class _SavedVideoData {
     required this.result,
     this.thumbnailUrl,
     this.thumbnailAssetPath,
+    this.videoPath,
     this.videoUrl,
   });
 
@@ -670,11 +507,28 @@ class _SavedVideoData {
   final String result;
   final String? thumbnailUrl;
   final String? thumbnailAssetPath;
+  final String? videoPath;
   final String? videoUrl;
 }
 
+List<DateTime?> _calendarCells(DateTime month) {
+  final DateTime firstDay = DateTime(month.year, month.month, 1);
+  final int daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+  final int leadingEmptyCells = firstDay.weekday % 7;
+  final List<DateTime?> cells = <DateTime?>[
+    ...List<DateTime?>.filled(leadingEmptyCells, null),
+    ...List<DateTime>.generate(
+      daysInMonth,
+      (index) => DateTime(month.year, month.month, index + 1),
+    ),
+  ];
 
+  while (cells.length % 7 != 0) {
+    cells.add(null);
+  }
 
+  return cells;
+}
 
 DateTime _dateOnly(DateTime date) {
   return DateTime(date.year, date.month, date.day);

@@ -10,6 +10,12 @@ class CameraService {
   bool get isInitialized => _isInitialized;
   bool get isRecording => _isRecording;
 
+  void _log(String message) {
+    if (const bool.fromEnvironment('dart.vm.product')) return;
+    // ignore: avoid_print
+    print('[CTL CAMERA] $message');
+  }
+
   Future<void> initialize() async {
     if (_isInitialized && _controller?.value.isInitialized == true) {
       return;
@@ -20,23 +26,46 @@ class CameraService {
       throw const CameraServiceException('사용 가능한 카메라가 없습니다.');
     }
 
-    final CameraDescription selectedCamera = cameras.firstWhere(
-      (camera) => camera.lensDirection == CameraLensDirection.back,
-      orElse: () => cameras.first,
-    );
+    final CameraDescription selectedCamera = _selectCamera(cameras);
+    _log('selected camera name=${selectedCamera.name}, lens=${selectedCamera.lensDirection}');
 
     final CameraController controller = CameraController(
       selectedCamera,
       ResolutionPreset.high,
-      enableAudio: true,
+      enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
 
     await controller.initialize();
+    _log('controller initialized, previewSize=${controller.value.previewSize}');
     await controller.lockCaptureOrientation(DeviceOrientation.landscapeLeft);
 
     _controller = controller;
     _isInitialized = true;
+  }
+
+  CameraDescription _selectCamera(List<CameraDescription> cameras) {
+    const String preferredLens = String.fromEnvironment(
+      'CTL_CAMERA_LENS',
+      defaultValue: 'back',
+    );
+
+    final String normalized = preferredLens.toLowerCase().trim();
+    if (normalized == 'first') return cameras.first;
+
+    CameraLensDirection? direction;
+    if (normalized == 'front') {
+      direction = CameraLensDirection.front;
+    } else if (normalized == 'external') {
+      direction = CameraLensDirection.external;
+    } else {
+      direction = CameraLensDirection.back;
+    }
+
+    return cameras.firstWhere(
+      (CameraDescription camera) => camera.lensDirection == direction,
+      orElse: () => cameras.first,
+    );
   }
 
   Future<XFile> captureFrame() async {
@@ -46,7 +75,9 @@ class CameraService {
       throw const CameraServiceException('녹화 중에는 라인 검출용 프레임을 캡처할 수 없습니다.');
     }
 
-    return controller.takePicture();
+    final XFile frame = await controller.takePicture();
+    _log('capture frame path=${frame.path}');
+    return frame;
   }
 
   Future<void> startRecording() async {
@@ -58,6 +89,7 @@ class CameraService {
 
     await controller.startVideoRecording();
     _isRecording = true;
+    _log('video recording started');
   }
 
   Future<String> stopRecording() async {
@@ -69,6 +101,7 @@ class CameraService {
 
     final XFile video = await controller.stopVideoRecording();
     _isRecording = false;
+    _log('video recording stopped path=${video.path}');
     return video.path;
   }
 
@@ -88,6 +121,7 @@ class CameraService {
     _isRecording = false;
 
     await controller?.dispose();
+    _log('controller disposed');
   }
 }
 

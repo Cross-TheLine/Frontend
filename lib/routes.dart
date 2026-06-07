@@ -1,3 +1,5 @@
+import 'services/api_service.dart';
+
 class AppRoutes {
   const AppRoutes._();
 
@@ -29,10 +31,20 @@ class HowToUseArgs {
 
 class ResultScreenArgs {
   const ResultScreenArgs({
-    required this.isIn,
+    JudgeDecision? decision,
+    bool? isIn,
     this.videoPath,
-  });
+    this.serverVideoPath,
+    this.serverVideoUrl,
+  }) : decision = decision ??
+            (isIn == null
+                ? JudgeDecision.inCall
+                : isIn
+                    ? JudgeDecision.inCall
+                    : JudgeDecision.outCall);
 
-  final bool isIn;
+  final JudgeDecision decision;
   final String? videoPath;
+  final String? serverVideoPath;
+  final String? serverVideoUrl;
 }
