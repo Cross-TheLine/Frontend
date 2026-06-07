@@ -61,8 +61,6 @@ class _ResultScreenState extends State<ResultScreen>
     });
 
     try {
-      await _apiService.saveCurrentSession(videoPath: widget.videoPath);
-
       final DateTime now = DateTime.now();
       final String? serverVideoUrl = _nonEmptyString(
         widget.serverVideoUrl ?? _apiService.currentJudgeClipUrl,
@@ -104,10 +102,23 @@ class _ResultScreenState extends State<ResultScreen>
         ),
       );
 
+      String? serverSaveError;
+      try {
+        await _apiService.saveCurrentSession(videoPath: widget.videoPath);
+      } catch (error) {
+        serverSaveError = error.toString().replaceFirst('Exception: ', '');
+      }
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(
+          content: Text(
+            serverSaveError == null
+                ? message
+                : '$message\n서버 저장 상태 갱신 실패: $serverSaveError',
+          ),
+        ),
       );
     } catch (error) {
       if (!mounted) return;

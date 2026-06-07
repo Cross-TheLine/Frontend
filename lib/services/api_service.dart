@@ -248,7 +248,10 @@ class ApiService {
       );
     }
 
-    await _postJson('/sessions/${_encodePath(session.sessionId)}/save');
+    await _postJson(
+      '/sessions/${_encodePath(session.sessionId)}/save',
+      body: const <String, dynamic>{},
+    );
   }
 
   Future<void> finishCurrentSession() async {
