@@ -69,7 +69,12 @@ class _SavedVideoPreviewState extends State<SavedVideoPreview> {
       final VideoPlayerController controller;
 
       if (uri != null && uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https')) {
-        controller = VideoPlayerController.networkUrl(uri);
+        controller = VideoPlayerController.networkUrl(
+          uri,
+          httpHeaders: const <String, String>{
+            'ngrok-skip-browser-warning': 'true',
+          },
+        );
       } else {
         controller = VideoPlayerController.file(File(source));
       }

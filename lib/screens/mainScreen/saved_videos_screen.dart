@@ -43,18 +43,25 @@ class _SavedVideosScreenState extends State<SavedVideosScreen>
     if (!mounted) return;
 
     setState(() {
-      _savedVideos = videos.map((SavedVideoRecord video) {
+      _savedVideos = videos
+          .where((SavedVideoRecord video) => _hasText(video.videoUrl))
+          .map((SavedVideoRecord video) {
         return _SavedVideoData(
           id: video.id,
           recordedAt: video.recordedAt,
           result: video.result,
           thumbnailUrl: video.thumbnailUrl,
           thumbnailAssetPath: video.thumbnailAssetPath,
-          videoPath: video.videoPath,
           videoUrl: video.videoUrl,
         );
       }).toList(growable: false);
     });
+  }
+
+
+  bool _hasText(String? value) {
+    final String? trimmed = value?.trim();
+    return trimmed != null && trimmed.isNotEmpty;
   }
 
   @override
@@ -461,8 +468,7 @@ class _SavedVideoItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppSizes.w(context, 9)),
             child: SavedVideoPreview(
               videoUrl: video.videoUrl,
-              videoPath: video.videoPath,
-              thumbnailUrl: video.thumbnailUrl,
+                  thumbnailUrl: video.thumbnailUrl,
               thumbnailAssetPath: video.thumbnailAssetPath,
             ),
           ),
@@ -498,7 +504,6 @@ class _SavedVideoData {
     required this.result,
     this.thumbnailUrl,
     this.thumbnailAssetPath,
-    this.videoPath,
     this.videoUrl,
   });
 
@@ -507,7 +512,6 @@ class _SavedVideoData {
   final String result;
   final String? thumbnailUrl;
   final String? thumbnailAssetPath;
-  final String? videoPath;
   final String? videoUrl;
 }
 

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -39,23 +38,13 @@ class _MainScreenState extends State<MainScreen>
     _loadRecentVideos();
   }
 
-  @override
-  void didPopNext() {
-    super.didPopNext();
-    _loadRecentVideos();
-  }
 
   Future<void> _loadRecentVideos() async {
     final List<SavedVideoRecord> videos = await _savedVideoStorageService.loadVideos();
-    final List<SavedVideoRecord> playableVideos = <SavedVideoRecord>[];
-
-    for (final SavedVideoRecord video in videos) {
-      if (await _hasPlayableVideo(video)) {
-        playableVideos.add(video);
-      }
-
-      if (playableVideos.length >= 4) break;
-    }
+    final List<SavedVideoRecord> playableVideos = videos
+        .where((SavedVideoRecord video) => _hasText(video.videoUrl))
+        .take(4)
+        .toList(growable: false);
 
     if (!mounted) return;
 
@@ -65,20 +54,10 @@ class _MainScreenState extends State<MainScreen>
           id: video.id,
           thumbnailUrl: video.thumbnailUrl,
           thumbnailAssetPath: video.thumbnailAssetPath,
-          videoPath: video.videoPath,
           videoUrl: video.videoUrl,
         );
       }).toList(growable: false);
     });
-  }
-
-  Future<bool> _hasPlayableVideo(SavedVideoRecord video) async {
-    if (_hasText(video.videoUrl)) return true;
-
-    final String? path = _cleanText(video.videoPath);
-    if (path == null) return false;
-
-    return File(path).exists();
   }
 
   bool _hasText(String? value) => _cleanText(value) != null;
@@ -348,14 +327,12 @@ class _RecentVideoPreview {
     required this.id,
     this.thumbnailUrl,
     this.thumbnailAssetPath,
-    this.videoPath,
     this.videoUrl,
   });
 
   final String id;
   final String? thumbnailUrl;
   final String? thumbnailAssetPath;
-  final String? videoPath;
   final String? videoUrl;
 }
 
@@ -426,7 +403,6 @@ class _VideoPreviewCard extends StatelessWidget {
           children: [
             SavedVideoPreview(
               videoUrl: video.videoUrl,
-              videoPath: video.videoPath,
               thumbnailUrl: video.thumbnailUrl,
               thumbnailAssetPath: video.thumbnailAssetPath,
             ),

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -68,57 +67,26 @@ class _ResultScreenState extends State<ResultScreen>
       final String? serverVideoPath = _nonEmptyString(
         widget.serverVideoPath ?? _apiService.currentJudgeClipPath,
       );
-      final String? localVideoPath = _nonEmptyString(widget.videoPath);
 
-      String? savedVideoUrl;
-      String? savedVideoPath;
-      String savedId;
-      String message;
-
-      if (widget.decision == JudgeDecision.unknown && localVideoPath != null) {
-        savedVideoPath = await _persistLocalVideo(localVideoPath);
-        savedId = savedVideoPath;
-        message = '판정 불가 영상 원본을 저장했습니다.';
-      } else if (serverVideoUrl != null) {
-        savedVideoUrl = serverVideoUrl;
-        savedVideoPath = serverVideoPath;
-        savedId = serverVideoPath ?? serverVideoUrl;
-        message = '영상 저장이 완료되었습니다.';
-      } else if (localVideoPath != null) {
-        savedVideoPath = await _persistLocalVideo(localVideoPath);
-        savedId = savedVideoPath;
-        message = '서버 영상 경로가 없어 촬영 원본을 저장했습니다.';
-      } else {
-        throw const ApiServiceException('저장할 영상 경로를 받지 못했습니다.');
+      if (serverVideoUrl == null) {
+        throw const ApiServiceException('서버가 생성한 판정 영상 경로를 받지 못했습니다.');
       }
 
       await _savedVideoStorageService.saveVideo(
         SavedVideoRecord(
-          id: savedId,
+          id: serverVideoPath ?? serverVideoUrl,
           recordedAt: now,
           result: widget.decision.resultLabel,
-          videoPath: savedVideoPath,
-          videoUrl: savedVideoUrl,
+          videoUrl: serverVideoUrl,
         ),
       );
 
-      String? serverSaveError;
-      try {
-        await _apiService.saveCurrentSession(videoPath: widget.videoPath);
-      } catch (error) {
-        serverSaveError = error.toString().replaceFirst('Exception: ', '');
-      }
+      await _apiService.saveCurrentSession();
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            serverSaveError == null
-                ? message
-                : '$message\n서버 저장 상태 갱신 실패: $serverSaveError',
-          ),
-        ),
+        const SnackBar(content: Text('영상 저장이 완료되었습니다.')),
       );
     } catch (error) {
       if (!mounted) return;
@@ -133,30 +101,6 @@ class _ResultScreenState extends State<ResultScreen>
         });
       }
     }
-  }
-
-  Future<String> _persistLocalVideo(String sourcePath) async {
-    final File sourceFile = File(sourcePath);
-    final bool exists = await sourceFile.exists();
-    if (!exists) {
-      throw ApiServiceException('저장할 원본 영상이 없습니다: $sourcePath');
-    }
-
-    final Directory targetDir = await _savedVideoDirectory(sourceFile);
-    await targetDir.create(recursive: true);
-
-    final String timestamp = DateTime.now().microsecondsSinceEpoch.toString();
-    final String targetPath = '${targetDir.path}/cross_the_line_$timestamp.mp4';
-    final File copied = await sourceFile.copy(targetPath);
-    return copied.path;
-  }
-
-  Future<Directory> _savedVideoDirectory(File sourceFile) async {
-    final Directory cacheDir = sourceFile.parent;
-    final Directory appRoot = cacheDir.path.endsWith('/cache')
-        ? cacheDir.parent
-        : cacheDir;
-    return Directory('${appRoot.path}/files/saved_videos');
   }
 
   Future<void> _goToMain() async {

@@ -36,8 +36,8 @@ class SavedVideoStorageService {
       video,
       ...current.where((SavedVideoRecord item) {
         if (item.id == video.id) return false;
-        if (video.videoPath != null && video.videoPath!.isNotEmpty) {
-          return item.videoPath != video.videoPath;
+        if (video.videoUrl != null && video.videoUrl!.trim().isNotEmpty) {
+          return item.videoUrl != video.videoUrl;
         }
         return true;
       }),

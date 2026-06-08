@@ -26,11 +26,27 @@ class ApiService {
   String? _lastJudgeClipPath;
   String? _lastJudgeClipUrl;
   int _configIndex = 0;
+  String _matchType = 'singles';
 
   String? get currentSessionId => _session?.sessionId;
   String? get currentRecordingPath => _recordingPath;
   String? get currentJudgeClipPath => _lastJudgeClipPath;
   String? get currentJudgeClipUrl => _lastJudgeClipUrl;
+  String get currentMatchType => _matchType;
+
+  void setMatchType(String matchType) {
+    final String normalized = matchType.trim().toLowerCase();
+
+    if (normalized == 'single' || normalized == 'singles') {
+      _matchType = 'singles';
+    } else if (normalized == 'double' || normalized == 'doubles') {
+      _matchType = 'doubles';
+    } else if (normalized.isNotEmpty) {
+      _matchType = normalized;
+    }
+
+    _log('match_type=$_matchType');
+  }
 
   void _log(String message) {
     if (const bool.fromEnvironment('dart.vm.product')) return;
@@ -238,19 +254,17 @@ class ApiService {
     return const <String>[];
   }
 
-  Future<void> saveCurrentSession({String? videoPath}) async {
+  Future<void> saveCurrentSession({String? matchType}) async {
     final SessionInfo session = await ensureSession();
-
-    if (videoPath != null && videoPath.isNotEmpty && _recordingPath == null) {
-      _recordingPath = await _uploadRecording(
-        sessionId: session.sessionId,
-        videoPath: videoPath,
-      );
+    if (matchType != null && matchType.trim().isNotEmpty) {
+      setMatchType(matchType);
     }
 
     await _postJson(
       '/sessions/${_encodePath(session.sessionId)}/save',
-      body: const <String, dynamic>{},
+      body: <String, dynamic>{
+        'match_type': _matchType,
+      },
     );
   }
 
