@@ -1,11 +1,15 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../compo/app_colors.dart';
 import '../../compo/app_sizes.dart';
 import '../../compo/glass_button.dart';
+import '../../compo/saved_video_preview.dart';
 import '../../routes.dart';
 import '../../services/local_storage_service.dart';
+import '../../services/saved_video_storage_service.dart';
 import '../../services/screen_orientation.dart';
 import '../marker/marker_download.dart';
 
@@ -22,12 +26,47 @@ class _MainScreenState extends State<MainScreen>
   AppScreenOrientation get screenOrientation => AppScreenOrientation.portrait;
 
   final LocalStorageService _localStorageService = LocalStorageService();
+  final SavedVideoStorageService _savedVideoStorageService = SavedVideoStorageService();
 
-  // 백엔드에서 받은 최근 영상 목록 리스트에 매핑
   List<_RecentVideoPreview> _recentVideos = const <_RecentVideoPreview>[];
-
   bool _isMenuOpen = false;
   bool _isCheckingStart = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentVideos();
+  }
+
+
+  Future<void> _loadRecentVideos() async {
+    final List<SavedVideoRecord> videos = await _savedVideoStorageService.loadVideos();
+    final List<SavedVideoRecord> playableVideos = videos
+        .where((SavedVideoRecord video) => _hasText(video.videoUrl))
+        .take(4)
+        .toList(growable: false);
+
+    if (!mounted) return;
+
+    setState(() {
+      _recentVideos = playableVideos.map((SavedVideoRecord video) {
+        return _RecentVideoPreview(
+          id: video.id,
+          thumbnailUrl: video.thumbnailUrl,
+          thumbnailAssetPath: video.thumbnailAssetPath,
+          videoUrl: video.videoUrl,
+        );
+      }).toList(growable: false);
+    });
+  }
+
+  bool _hasText(String? value) => _cleanText(value) != null;
+
+  String? _cleanText(String? value) {
+    final String? trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
+  }
 
   void _toggleMenu() {
     setState(() {
@@ -77,11 +116,12 @@ class _MainScreenState extends State<MainScreen>
     Navigator.pushNamed(context, AppRoutes.introSelectPlay);
   }
 
-  void _openSavedVideos() {
+  Future<void> _openSavedVideos() async {
     _closeMenu();
-    Navigator.pushNamed(context, AppRoutes.savedVideos);
+    await Navigator.pushNamed(context, AppRoutes.savedVideos);
+    if (!mounted) return;
+    await _loadRecentVideos();
   }
-
 
   void _onMarkerDownload() {
     _closeMenu();
@@ -129,15 +169,13 @@ class _MainScreenState extends State<MainScreen>
                     left: AppSizes.w(context, 20),
                     child: _MainMenuButton(onPressed: _toggleMenu),
                   ),
-                  
-                  
-                  // 최근 영상 프리뷰
-                  Positioned(
-                    top: previewTop, 
-                    left: 0,
-                    right: 0,
-                    child: _VideoPreviewStrip(videos: _recentVideos),
-                  ),
+                  if (_recentVideos.isNotEmpty)
+                    Positioned(
+                      top: previewTop,
+                      left: 0,
+                      right: 0,
+                      child: _VideoPreviewStrip(videos: _recentVideos),
+                    ),
                   Positioned(
                     left: 0,
                     right: 0,
@@ -288,11 +326,13 @@ class _RecentVideoPreview {
   const _RecentVideoPreview({
     required this.id,
     this.thumbnailUrl,
+    this.thumbnailAssetPath,
     this.videoUrl,
   });
 
   final String id;
   final String? thumbnailUrl;
+  final String? thumbnailAssetPath;
   final String? videoUrl;
 }
 
@@ -306,19 +346,26 @@ class _VideoPreviewStrip extends StatelessWidget {
     final List<_RecentVideoPreview> visibleVideos =
         videos.take(4).toList(growable: false);
 
-    if (visibleVideos.isEmpty) {
-      return const SizedBox.shrink();
+    if (visibleVideos.isEmpty) return const SizedBox.shrink();
+
+    final double stripHeight = AppSizes.h(context, 222);
+
+    if (visibleVideos.length == 1) {
+      return SizedBox(
+        height: stripHeight,
+        width: double.infinity,
+        child: Center(
+          child: _VideoPreviewCard(video: visibleVideos.first),
+        ),
+      );
     }
 
     return SizedBox(
-      height: AppSizes.h(context, 222),
+      height: stripHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        padding: EdgeInsets.only(
-          left: AppSizes.w(context, 0),
-          right: AppSizes.w(context, 28),
-        ),
+        padding: EdgeInsets.symmetric(horizontal: AppSizes.w(context, 24)),
         itemCount: visibleVideos.length,
         separatorBuilder: (_, __) => SizedBox(width: AppSizes.w(context, 22)),
         itemBuilder: (context, index) {
@@ -329,8 +376,6 @@ class _VideoPreviewStrip extends StatelessWidget {
   }
 }
 
-
-// 영상 카드
 class _VideoPreviewCard extends StatelessWidget {
   const _VideoPreviewCard({required this.video});
 
@@ -356,82 +401,26 @@ class _VideoPreviewCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            _VideoThumbnail(thumbnailUrl: video.thumbnailUrl),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.18),
-                  ],
-                ),
-              ),
+            SavedVideoPreview(
+              videoUrl: video.videoUrl,
+              thumbnailUrl: video.thumbnailUrl,
+              thumbnailAssetPath: video.thumbnailAssetPath,
             ),
-            Center(
-              child: Container(
-                width: AppSizes.w(context, 48),
-                height: AppSizes.w(context, 48),
+            IgnorePointer(
+              child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.58),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.play_arrow_rounded,
-                  color: AppColors.mainTextDark,
-                  size: AppSizes.sp(context, 34),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.18),
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _VideoThumbnail extends StatelessWidget {
-  const _VideoThumbnail({this.thumbnailUrl});
-
-  final String? thumbnailUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final String? url = thumbnailUrl;
-    if (url == null || url.isEmpty) {
-      return const _VideoThumbnailFallback();
-    }
-
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const _VideoThumbnailFallback(),
-    );
-  }
-}
-
-class _VideoThumbnailFallback extends StatelessWidget {
-  const _VideoThumbnailFallback();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFE9ECEF),
-            Color(0xFFD8DDE3),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.videocam_outlined,
-          color: AppColors.mainTextDark,
-          size: AppSizes.sp(context, 34),
         ),
       ),
     );
@@ -478,8 +467,6 @@ class _MenuOverlay extends StatelessWidget {
   }
 }
 
-
-// 메뉴
 class _MenuPanel extends StatelessWidget {
   const _MenuPanel({
     required this.onSavedVideos,
@@ -564,9 +551,6 @@ class _MenuPanel extends StatelessWidget {
     );
   }
 }
-
-
-
 
 class _MenuItem extends StatelessWidget {
   const _MenuItem({

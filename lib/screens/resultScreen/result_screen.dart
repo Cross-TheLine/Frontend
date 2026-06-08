@@ -6,17 +6,23 @@ import 'package:flutter/services.dart';
 import '../../compo/app_colors.dart';
 import '../../compo/glass_button.dart';
 import '../../routes.dart';
+import '../../services/api_service.dart';
+import '../../services/saved_video_storage_service.dart';
 import '../../services/screen_orientation.dart';
 
 class ResultScreen extends StatefulWidget {
   const ResultScreen({
     super.key,
-    required this.isIn,
+    required this.decision,
     this.videoPath,
+    this.serverVideoPath,
+    this.serverVideoUrl,
   });
 
-  final bool isIn;
+  final JudgeDecision decision;
   final String? videoPath;
+  final String? serverVideoPath;
+  final String? serverVideoUrl;
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
@@ -24,6 +30,9 @@ class ResultScreen extends StatefulWidget {
 
 class _ResultScreenState extends State<ResultScreen>
     with ScreenOrientationMixin<ResultScreen> {
+  final ApiService _apiService = ApiService();
+  final SavedVideoStorageService _savedVideoStorageService = SavedVideoStorageService();
+
   bool _isMoving = false;
   bool _isMovingToMain = false;
 
@@ -43,18 +52,55 @@ class _ResultScreenState extends State<ResultScreen>
     Navigator.pushReplacementNamed(context, AppRoutes.videoTake);
   }
 
-  void _saveVideoForLater() {
-    final String? path = widget.videoPath;
+  Future<void> _saveVideoForLater() async {
+    if (_isMoving) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          path == null || path.isEmpty
-              ? '영상 저장 기능 여기에 연결'
-              : '영상저장기능 여기에 연결 \n임시 영상 경로: $path',
+    setState(() {
+      _isMoving = true;
+    });
+
+    try {
+      final DateTime now = DateTime.now();
+      final String? serverVideoUrl = _nonEmptyString(
+        widget.serverVideoUrl ?? _apiService.currentJudgeClipUrl,
+      );
+      final String? serverVideoPath = _nonEmptyString(
+        widget.serverVideoPath ?? _apiService.currentJudgeClipPath,
+      );
+
+      if (serverVideoUrl == null) {
+        throw const ApiServiceException('서버가 생성한 판정 영상 경로를 받지 못했습니다.');
+      }
+
+      await _savedVideoStorageService.saveVideo(
+        SavedVideoRecord(
+          id: serverVideoPath ?? serverVideoUrl,
+          recordedAt: now,
+          result: widget.decision.resultLabel,
+          videoUrl: serverVideoUrl,
         ),
-      ),
-    );
+      );
+
+      await _apiService.saveCurrentSession();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('영상 저장이 완료되었습니다.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isMoving = false;
+        });
+      }
+    }
   }
 
   Future<void> _goToMain() async {
@@ -64,6 +110,10 @@ class _ResultScreenState extends State<ResultScreen>
       _isMoving = true;
       _isMovingToMain = true;
     });
+    try {
+      await _apiService.finishCurrentSession();
+    } catch (_) {}
+
     await applyAppScreenOrientation(screenOrientation);
     await waitForAppliedOrientation(context, screenOrientation);
 
@@ -79,10 +129,8 @@ class _ResultScreenState extends State<ResultScreen>
   @override
   Widget build(BuildContext context) {
     final double scale = _resultLandscapeScale(context);
-    final Color backgroundColor = widget.isIn
-        ? AppColors.inResult
-        : AppColors.outResult;
-    final String resultText = widget.isIn ? 'IN !!!' : 'OUT !!!';
+    final Color backgroundColor = _backgroundColorForDecision(widget.decision);
+    final String resultText = widget.decision.resultText;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
@@ -103,25 +151,38 @@ class _ResultScreenState extends State<ResultScreen>
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 78 * scale,
+                    fontSize: widget.decision == JudgeDecision.unknown
+                        ? 66 * scale
+                        : 78 * scale,
                     fontWeight: FontWeight.w800,
                     height: 1,
                     letterSpacing: -1.2,
                   ),
                 ),
-                SizedBox(height: 40 * scale),
+                SizedBox(height: widget.decision == JudgeDecision.unknown ? 14 * scale : 0),
+                if (widget.decision == JudgeDecision.unknown)
+                  Text(
+                    '판정 불가',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.92),
+                      fontSize: 18 * scale,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                SizedBox(height: widget.decision == JudgeDecision.unknown ? 26 * scale : 40 * scale),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _ResultIconAction(
-                      scale: scale*0.6,
+                      scale: scale * 0.6,
                       icon: Icons.save_alt_rounded,
-   
                       onPressed: _isMoving ? null : _saveVideoForLater,
                     ),
                     SizedBox(width: 28 * scale),
                     _ResultIconAction(
-                      scale: scale*0.6,
+                      scale: scale * 0.6,
                       icon: Icons.home_rounded,
                       onPressed: _isMoving ? null : _goToMain,
                     ),
@@ -193,27 +254,22 @@ class _ResultIconAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GlassButton(
-          width: 46 * scale,
-          height: 46 * scale,
-          borderRadius: 999,
-          blur: 22,
-          backgroundColor: Colors.white.withOpacity(0.0),
-          borderColor: Colors.white.withOpacity(0.46),
-          shadowColor: Colors.black.withOpacity(0.10),
-          shadowBlurRadius: 22 * scale,
-          shadowOffset: Offset(0, 10 * scale),
-          onPressed: onPressed,
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: 22 * scale,
-          ),
-        ),
-      ],
+    return GlassButton(
+      width: 68 * scale,
+      height: 68 * scale,
+      borderRadius: 999,
+      blur: 22,
+      backgroundColor: Colors.white.withOpacity(0.40),
+      borderColor: Colors.white.withOpacity(0.46),
+      shadowColor: Colors.black.withOpacity(0.10),
+      shadowBlurRadius: 22 * scale,
+      shadowOffset: Offset(0, 10 * scale),
+      onPressed: onPressed,
+      child: Icon(
+        icon,
+        color: Colors.white.withOpacity(0.96),
+        size: 34 * scale,
+      ),
     );
   }
 }
@@ -223,4 +279,21 @@ double _resultLandscapeScale(BuildContext context) {
   return math.min(size.width / 852, size.height / 393)
       .clamp(0.78, 1.25)
       .toDouble();
+}
+
+Color _backgroundColorForDecision(JudgeDecision decision) {
+  switch (decision) {
+    case JudgeDecision.inCall:
+      return const Color(0xFF65C93D);
+    case JudgeDecision.outCall:
+      return const Color(0xFFF24642);
+    case JudgeDecision.unknown:
+      return const Color(0xFF8C8C8C);
+  }
+}
+
+String? _nonEmptyString(String? value) {
+  final String? trimmed = value?.trim();
+  if (trimmed == null || trimmed.isEmpty) return null;
+  return trimmed;
 }

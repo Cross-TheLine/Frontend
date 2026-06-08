@@ -6,6 +6,7 @@ import 'screens/intro/intro_guid2.dart';
 import 'screens/intro/camera_orientation_handoff.dart';
 import 'screens/intro/intro_guid0.dart';
 import 'routes.dart';
+import 'services/api_service.dart';
 import 'screens/mainScreen/how_to_use_screen.dart';
 import 'screens/mainScreen/main_screen.dart';
 import 'screens/mainScreen/saved_videos_screen.dart';
@@ -118,8 +119,10 @@ class CrossTheLine extends StatelessWidget {
             : null;
         return MaterialPageRoute(
           builder: (_) => ResultScreen(
-            isIn: args?.isIn ?? true,
+            decision: args?.decision ?? JudgeDecision.inCall,
             videoPath: args?.videoPath,
+            serverVideoPath: args?.serverVideoPath,
+            serverVideoUrl: args?.serverVideoUrl,
           ),
           settings: settings,
         );

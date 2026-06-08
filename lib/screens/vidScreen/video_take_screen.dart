@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -30,6 +31,11 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
 
   _VideoSetupPhase _phase = _VideoSetupPhase.initializing;
   Timer? _successPopupTimer;
+  int _lineDetectionRunId = 0;
+  DateTime? _recordStartedAt;
+  final Stopwatch _recordingStopwatch = Stopwatch();
+  static const double _judgeLookbackSec = 5;
+  String? _lineDetectionMessage;
 
   bool _isInitialized = false;
   bool _isRecording = false;
@@ -73,65 +79,80 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
   Future<void> _startLineDetection() async {
     if (_phase == _VideoSetupPhase.detecting) return;
 
+    final int runId = ++_lineDetectionRunId;
+
     setState(() {
       _phase = _VideoSetupPhase.detecting;
       _errorMessage = null;
+      _lineDetectionMessage = '카메라를 움직이지 말고\n마커와 라인이 화면 안에 보이게 해주세요.';
       _showSuccessPopup = false;
     });
 
-    try {
-      // 사용자가 확인을 누른 뒤 프레임 1장만 캡처해서 백엔드게 전송
-      // 백엔드가 detected=true를 반환하면 준비 완료로 판단하고 이후 녹화 시작
-      final XFile frame = await _cameraService.captureFrame();
-      final LineDetectionResult result = await _apiService.requestLineDetection(
-        imagePath: frame.path,
-      );
+    while (mounted && _lineDetectionRunId == runId && _phase == _VideoSetupPhase.detecting) {
+      try {
+        final XFile frame = await _cameraService.captureFrame();
+        final LineDetectionResult result = await _apiService.requestLineDetection(
+          imagePath: frame.path,
+        );
 
-      if (!mounted) return;
+        if (!mounted || _lineDetectionRunId != runId) return;
 
-      if (!result.detected) {
+        if (result.detected) {
+          setState(() {
+            _phase = _VideoSetupPhase.ready;
+            _lineDetectionMessage = null;
+            _showSuccessPopup = true;
+          });
+
+          _successPopupTimer?.cancel();
+          _successPopupTimer = Timer(const Duration(milliseconds: 1250), () {
+            if (!mounted) return;
+            setState(() {
+              _showSuccessPopup = false;
+            });
+          });
+
+          await _startRecordingAfterDetection();
+          return;
+        }
+
         setState(() {
-          _phase = _VideoSetupPhase.failed;
           _errorMessage = result.message.isEmpty
-              ? '마커와 라인을 인식하지 못했습니다.'
+              ? '아직 마커와 라인을 인식하지 못했습니다.'
               : result.message;
+          _lineDetectionMessage = '아직 인식되지 않았습니다.\n3초 뒤 다시 확인합니다.';
         });
-        return;
+      } catch (error) {
+        if (!mounted || _lineDetectionRunId != runId) return;
+
+        setState(() {
+          _errorMessage = _stringifyError(error);
+          _lineDetectionMessage = '인식 요청이 실패했습니다.\n3초 뒤 다시 시도합니다.';
+        });
       }
 
-      setState(() {
-        _phase = _VideoSetupPhase.ready;
-        _showSuccessPopup = true;
-      });
-
-      _successPopupTimer?.cancel();
-      _successPopupTimer = Timer(const Duration(milliseconds: 1250), () {
-        if (!mounted) return;
-        setState(() {
-          _showSuccessPopup = false;
-        });
-      });
-
-      await _startRecordingAfterDetection();
-    } catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        _phase = _VideoSetupPhase.failed;
-        _errorMessage = _stringifyError(error);
-      });
+      await Future<void>.delayed(const Duration(seconds: 3));
     }
   }
 
   Future<void> _startRecordingAfterDetection() async {
     try {
+      await _apiService.startRecordingSession();
       await _cameraService.startRecording();
+
+      final DateTime startedAt = DateTime.now();
+      _recordingStopwatch
+        ..reset()
+        ..start();
 
       if (!mounted) return;
 
       setState(() {
         _isRecording = true;
+        _recordStartedAt = startedAt;
       });
+
+      debugPrint('[CTL VIDEO] recording started at $startedAt');
     } catch (error) {
       if (!mounted) return;
 
@@ -144,9 +165,15 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
   Future<void> _onJudgeButtonPressed() async {
     if (_phase != _VideoSetupPhase.ready || !_isRecording) return;
 
-    // 백엔드 판정은 사용자가 버튼을 누른 시점 기준으로 처리
-    // 타임스탬프 같이 넘기기
     final DateTime pressedAt = DateTime.now();
+    final DateTime? recordStartedAt = _recordStartedAt;
+    final double pressedAtSec = _recordingStopwatch.elapsedMilliseconds / 1000.0;
+    final double segmentStartSec = math.max(0, pressedAtSec - _judgeLookbackSec).toDouble();
+    debugPrint(
+      '[CTL VIDEO] judge pressed. pressed_at_sec=${pressedAtSec.toStringAsFixed(3)}, '
+      'segment=${segmentStartSec.toStringAsFixed(3)}~${pressedAtSec.toStringAsFixed(3)}, '
+      'lookback_sec=$_judgeLookbackSec',
+    );
 
     setState(() {
       _phase = _VideoSetupPhase.judging;
@@ -158,16 +185,33 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
       // 판정 요청 전 현재 녹화 파일을 확정
       // 이후 ->  loading_result_screen을 안거치고 이 화면의 glass popup 위에서 바로 결과 Api 대기
       final String videoPath = await _cameraService.stopRecording();
+      _recordingStopwatch.stop();
+      await _apiService.stopRecordingSession();
+
+      if (videoPath.isNotEmpty) {
+        final File videoFile = File(videoPath);
+        final bool exists = await videoFile.exists();
+        final int size = exists ? await videoFile.length() : 0;
+        debugPrint('[CTL VIDEO] stopped. path=$videoPath');
+        debugPrint('[CTL VIDEO] exists=$exists, size=$size bytes');
+      }
 
       if (!mounted) return;
 
       setState(() {
         _isRecording = false;
+        _recordStartedAt = null;
+        _recordingStopwatch
+          ..stop()
+          ..reset();
       });
 
-      final bool isIn = await _apiService.requestJudgeByMarkerEvent(
+      final JudgeResult judgeResult = await _apiService.requestJudgeByMarkerEvent(
         videoPath: videoPath,
         pressedAt: pressedAt,
+        recordStartedAt: recordStartedAt,
+        pressedAtSec: pressedAtSec,
+        lookbackSec: _judgeLookbackSec,
       );
 
       if (!mounted) return;
@@ -176,8 +220,10 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
         context,
         AppRoutes.result,
         arguments: ResultScreenArgs(
-          isIn: isIn,
+          decision: judgeResult.decision,
           videoPath: videoPath,
+          serverVideoPath: judgeResult.clipPath,
+          serverVideoUrl: judgeResult.clipUrl,
         ),
       );
     } catch (error) {
@@ -187,6 +233,10 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
       setState(() {
         _phase = _VideoSetupPhase.failed;
         _isRecording = false;
+        _recordStartedAt = null;
+        _recordingStopwatch
+          ..stop()
+          ..reset();
         _errorMessage = _stringifyError(error);
       });
     }
@@ -196,10 +246,15 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
     if (_isRecording) {
       try {
         await _cameraService.stopRecording();
+        await _apiService.stopRecordingSession();
       } catch (_) {}
       if (!mounted) return;
       setState(() {
         _isRecording = false;
+        _recordStartedAt = null;
+        _recordingStopwatch
+          ..stop()
+          ..reset();
       });
     }
 
@@ -207,11 +262,21 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
   }
 
   Future<void> _goBack() async {
+    ++_lineDetectionRunId;
+
     if (_isRecording) {
       try {
         await _cameraService.stopRecording();
+        await _apiService.stopRecordingSession();
       } catch (_) {}
     }
+    _recordingStopwatch
+      ..stop()
+      ..reset();
+
+    try {
+      await _apiService.finishCurrentSession();
+    } catch (_) {}
 
     if (!mounted) return;
     Navigator.pop(context);
@@ -226,7 +291,11 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
 
   @override
   void dispose() {
+    ++_lineDetectionRunId;
     _successPopupTimer?.cancel();
+    _recordingStopwatch
+      ..stop()
+      ..reset();
     _cameraService.dispose();
     super.dispose();
   }
@@ -305,7 +374,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
                   scale: scale,
                   icon: Icons.crop_free_rounded,
                   title: '마커 인식 중',
-                  message: '카메라를 움직이지 말고\n마커와 라인이 화면 안에 보이게 해주세요.',
+                  message: _lineDetectionMessage ?? '카메라를 움직이지 말고\n마커와 라인이 화면 안에 보이게 해주세요.',
                   showProgress: true,
                 ),
 

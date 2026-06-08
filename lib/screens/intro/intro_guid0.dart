@@ -7,6 +7,7 @@ import '../../compo/app_colors.dart';
 import '../../compo/app_sizes.dart';
 import '../../compo/glass_button.dart';
 import '../../routes.dart';
+import '../../services/api_service.dart';
 import '../../services/screen_orientation.dart';
 
 
@@ -22,6 +23,7 @@ class _IntroSelectPlayScreenState extends State<IntroSelectPlayScreen>
   @override
   AppScreenOrientation get screenOrientation => AppScreenOrientation.portrait;
 
+  final ApiService _apiService = ApiService();
   _MatchType? _selectedType;
 
   void _selectType(_MatchType type) {
@@ -31,7 +33,10 @@ class _IntroSelectPlayScreenState extends State<IntroSelectPlayScreen>
   }
 
   void _goNext() {
-    if (_selectedType == null) return;
+    final _MatchType? selectedType = _selectedType;
+    if (selectedType == null) return;
+
+    _apiService.setMatchType(selectedType.apiValue);
     Navigator.pushNamed(context, AppRoutes.introGuid1);
   }
 
@@ -145,12 +150,14 @@ enum _MatchType {
   singles(
     korean: '단식',
     english: 'SINGLES',
+    apiValue: 'singles',
     description: '사이드라인 안쪽 단식 라인 기준으로 판정합니다.',
     icon: Icons.person_rounded,
   ),
   doubles(
     korean: '복식',
     english: 'DOUBLES',
+    apiValue: 'doubles',
     description: '바깥쪽 복식 라인까지 포함해서 판정합니다.',
     icon: Icons.people_alt_rounded,
   );
@@ -158,12 +165,14 @@ enum _MatchType {
   const _MatchType({
     required this.korean,
     required this.english,
+    required this.apiValue,
     required this.description,
     required this.icon,
   });
 
   final String korean;
   final String english;
+  final String apiValue;
   final String description;
   final IconData icon;
 }
