@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -85,14 +86,20 @@ class _ResultScreenState extends State<ResultScreen>
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('영상 저장이 완료되었습니다.')),
+      await _showSaveStatusPopup(
+        title: '저장 완료',
+        message: '판정 영상이 저장되었습니다.',
+        icon: Icons.check_rounded,
+        iconColor: AppColors.accentGreen,
       );
     } catch (error) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      await _showSaveStatusPopup(
+        title: '저장 실패',
+        message: error.toString().replaceFirst('Exception: ', ''),
+        icon: Icons.priority_high_rounded,
+        iconColor: const Color(0xFFF24642),
       );
     } finally {
       if (mounted) {
@@ -101,6 +108,46 @@ class _ResultScreenState extends State<ResultScreen>
         });
       }
     }
+  }
+
+  Future<void> _showSaveStatusPopup({
+    required String title,
+    required String message,
+    required IconData icon,
+    required Color iconColor,
+  }) async {
+    await showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'save-status-popup',
+      barrierColor: Colors.black.withOpacity(0.34),
+      transitionDuration: const Duration(milliseconds: 180),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return Center(
+          child: _SaveStatusGlassPopup(
+            title: title,
+            message: message,
+            icon: icon,
+            iconColor: iconColor,
+            onConfirm: () => Navigator.of(dialogContext).pop(),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final CurvedAnimation curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
+
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.96, end: 1).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _goToMain() async {
@@ -196,6 +243,132 @@ class _ResultScreenState extends State<ResultScreen>
                 ),
                 SizedBox(height: 18 * scale),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SaveStatusGlassPopup extends StatelessWidget {
+  const _SaveStatusGlassPopup({
+    required this.title,
+    required this.message,
+    required this.icon,
+    required this.iconColor,
+    required this.onConfirm,
+  });
+
+  final String title;
+  final String message;
+  final IconData icon;
+  final Color iconColor;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    final double scale = _resultLandscapeScale(context);
+
+    return Material(
+      type: MaterialType.transparency,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 28 * scale),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30 * scale),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.18),
+                blurRadius: 34 * scale,
+                offset: Offset(0, 16 * scale),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30 * scale),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+              child: Container(
+                width: 340 * scale,
+                padding: EdgeInsets.fromLTRB(
+                  24 * scale,
+                  24 * scale,
+                  24 * scale,
+                  22 * scale,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.74),
+                  borderRadius: BorderRadius.circular(30 * scale),
+                  border: Border.all(color: Colors.white.withOpacity(0.78)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 58 * scale,
+                      height: 58 * scale,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.44),
+                        border: Border.all(color: Colors.white.withOpacity(0.72)),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: iconColor,
+                        size: 34 * scale,
+                      ),
+                    ),
+                    SizedBox(height: 14 * scale),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.mainTextDark,
+                        fontSize: 22 * scale,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    SizedBox(height: 8 * scale),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.mutedTextDark,
+                        fontSize: 13 * scale,
+                        fontWeight: FontWeight.w700,
+                        height: 1.35,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    SizedBox(height: 22 * scale),
+                    GlassButton(
+                      width: 220 * scale,
+                      height: 48 * scale,
+                      borderRadius: 999,
+                      blur: 24,
+                      backgroundColor: Colors.white.withOpacity(0.62),
+                      borderColor: Colors.white.withOpacity(0.86),
+                      shadowColor: Colors.black.withOpacity(0.08),
+                      shadowBlurRadius: 22 * scale,
+                      shadowOffset: Offset(0, 10 * scale),
+                      onPressed: onConfirm,
+                      child: Text(
+                        '확인',
+                        style: TextStyle(
+                          color: AppColors.mainTextDark,
+                          fontSize: 14 * scale,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
