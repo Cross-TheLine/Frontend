@@ -50,7 +50,11 @@ class _ResultScreenState extends State<ResultScreen>
       _isMovingToMain = false;
     });
 
-    Navigator.pushReplacementNamed(context, AppRoutes.videoTake);
+    Navigator.pushReplacementNamed(
+      context,
+      AppRoutes.videoTake,
+      arguments: const VideoTakeArgs(skipLineDetection: true),
+    );
   }
 
   Future<void> _saveVideoForLater() async {
