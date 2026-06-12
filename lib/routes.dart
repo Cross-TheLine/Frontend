@@ -29,6 +29,15 @@ class HowToUseArgs {
   final bool replaceWithNextRoute;
 }
 
+
+class VideoTakeArgs {
+  const VideoTakeArgs({
+    this.skipLineDetection = false,
+  });
+
+  final bool skipLineDetection;
+}
+
 class ResultScreenArgs {
   const ResultScreenArgs({
     JudgeDecision? decision,

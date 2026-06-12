@@ -15,7 +15,12 @@ import '../../services/camera_service.dart';
 import '../../services/screen_orientation.dart';
 
 class VideoTakeScreen extends StatefulWidget {
-  const VideoTakeScreen({super.key});
+  const VideoTakeScreen({
+    super.key,
+    this.args = const VideoTakeArgs(),
+  });
+
+  final VideoTakeArgs args;
 
   @override
   State<VideoTakeScreen> createState() => _VideoTakeScreenState();
@@ -62,10 +67,20 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
 
       if (!mounted) return;
 
+      final bool skipLineDetection = widget.args.skipLineDetection;
+
       setState(() {
         _isInitialized = true;
-        _phase = _VideoSetupPhase.intro;
+        _phase = skipLineDetection
+            ? _VideoSetupPhase.ready
+            : _VideoSetupPhase.intro;
+        _lineDetectionMessage = null;
+        _showSuccessPopup = false;
       });
+
+      if (skipLineDetection) {
+        await _startRecordingAfterDetection();
+      }
     } catch (error) {
       if (!mounted) return;
 
@@ -383,7 +398,7 @@ class _VideoTakeScreenState extends State<VideoTakeScreen>
                   scale: scale,
                   icon: Icons.check_rounded,
                   title: '인식 성공!',
-                  message: '라인 검출이 완료되었습니다.\n판정이 필요할 때 빨간 버튼을 눌러주세요.',
+                  message: '라인 검출이 완료되었습니다.\n판정이 필요할 때 초록 버튼을 눌러주세요.',
                   compact: true,
                 ),
               if (_phase == _VideoSetupPhase.failed)
@@ -530,26 +545,39 @@ class _JudgeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double size = 64 * scale;
+
     return GestureDetector(
       onTap: enabled ? onPressed : null,
       child: Opacity(
         opacity: enabled ? 1 : 0.42,
         child: Container(
-          width: 60 * scale,
-          height: 60 * scale,
+          width: size,
+          height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: const Color(0xFFF24642),
+            color: AppColors.accentGreen.withOpacity(0.95),
             border: Border.all(
-              color: const Color(0xFF31513E),
-              width: 5 * scale,
+              color: Colors.white.withOpacity(0.28),
+              width: 1.4 * scale,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFF24642).withOpacity(0.42),
-                blurRadius: 18 * scale,
+                color: AppColors.accentGreen.withOpacity(0.34),
+                blurRadius: 22 * scale,
+                offset: Offset(0, 10 * scale),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 16 * scale,
+                offset: Offset(0, 8 * scale),
               ),
             ],
+          ),
+          child: Icon(
+            Icons.touch_app_rounded,
+            color: Colors.white,
+            size: 34 * scale,
           ),
         ),
       ),

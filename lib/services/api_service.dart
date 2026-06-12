@@ -12,7 +12,7 @@ class ApiService {
 
   static const String baseUrl = String.fromEnvironment(
     'CTL_API_BASE_URL',
-    defaultValue: 'https://superpowered-giselle-lacerant.ngrok-free.dev',
+    defaultValue: 'https://nutmeg-geek-circling.ngrok-free.dev',
   );
 
   final HttpClient _client = HttpClient()

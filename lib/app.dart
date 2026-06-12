@@ -106,9 +106,12 @@ class CrossTheLine extends StatelessWidget {
         );
 
       case AppRoutes.videoTake:
+        final VideoTakeArgs args = settings.arguments is VideoTakeArgs
+            ? settings.arguments as VideoTakeArgs
+            : const VideoTakeArgs();
         return PageRouteBuilder(
           settings: settings,
-          pageBuilder: (_, __, ___) => const VideoTakeScreen(),
+          pageBuilder: (_, __, ___) => VideoTakeScreen(args: args),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
         );

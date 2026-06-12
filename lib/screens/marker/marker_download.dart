@@ -145,13 +145,13 @@ class _MarkerDownloadGlassDialog extends StatelessWidget {
                           height: AppSizes.h(context, 48),
                           borderRadius: 999,
                           backgroundColor: isSuccess
-                              ? AppColors.vividBlue.withOpacity(0.92)
+                              ? AppColors.accentGreen.withOpacity(0.95)
                               : Colors.white.withOpacity(0.68),
                           borderColor: isSuccess
-                              ? Colors.white.withOpacity(0.28)
+                              ? Colors.white.withOpacity(0.26)
                               : Colors.white.withOpacity(0.92),
                           shadowColor: isSuccess
-                              ? AppColors.vividBlue.withOpacity(0.26)
+                              ? AppColors.accentGreen.withOpacity(0.28)
                               : Colors.black.withOpacity(0.08),
                           shadowBlurRadius: 28,
                           shadowOffset: const Offset(0, 14),
